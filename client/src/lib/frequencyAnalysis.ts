@@ -11,7 +11,7 @@ export const angelicFrequencies: AngelicFrequency[] = [
 ];
 
 // Tolerance for frequency detection (±Hz)
-const FREQUENCY_TOLERANCE = 2;
+const FREQUENCY_TOLERANCE = 5; // Increased tolerance to make detection easier
 
 // Check if a frequency is close to a known angelic frequency
 export function isAngelicFrequency(freq: number): boolean {
