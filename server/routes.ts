@@ -65,7 +65,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       // Generate AI analysis if not provided
       if (!validatedData.analysis || validatedData.analysis.trim() === "") {
-        validatedData.analysis = generateAnalysis(validatedData.detectedFrequencies);
+        // Ensure detectedFrequencies is the correct type
+        const typedFrequencies = Array.isArray(validatedData.detectedFrequencies) 
+          ? validatedData.detectedFrequencies as DetectedFrequency[]
+          : [];
+          
+        validatedData.analysis = generateAnalysis(typedFrequencies);
       }
       
       const report = await storage.saveFrequencyReport(validatedData);

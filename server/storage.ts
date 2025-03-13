@@ -49,11 +49,21 @@ export class MemStorage implements IStorage {
   async saveFrequencyReport(report: InsertFrequencyReport): Promise<FrequencyReport> {
     const id = this.reportCurrentId++;
     const now = new Date();
+    
+    // Ensure detectedFrequencies is properly typed as an array
+    const detectedFrequencies = Array.isArray(report.detectedFrequencies) 
+      ? report.detectedFrequencies as DetectedFrequency[]
+      : [];
+    
+    // Create properly typed frequency report
     const frequencyReport: FrequencyReport = { 
-      ...report, 
-      id, 
+      id,
+      detectedFrequencies,
+      analysis: report.analysis || "",
+      userNotes: report.userNotes || null,
       createdAt: now 
     };
+    
     this.frequencyReports.set(id, frequencyReport);
     return frequencyReport;
   }
