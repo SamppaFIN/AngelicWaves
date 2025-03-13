@@ -107,24 +107,65 @@ export function FrequencyVisualizer({
               />
               
               {hasAngelicFrequency && (
-                <motion.div 
-                  className="absolute w-full h-full"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1, rotate: 360 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ rotate: { duration: 8, repeat: Infinity, ease: "linear" } }}
-                  style={{
-                    backgroundImage: `
-                      radial-gradient(circle at 25% 25%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 75% 35%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 40% 60%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 65% 75%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 20% 80%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%),
-                      radial-gradient(circle at 80% 15%, rgba(74, 222, 128, 0.4) 2%, transparent 2.5%)
-                    `
-                  }}
-                />
+                <>
+                  {/* Enhanced disco ball effect */}
+                  <motion.div 
+                    className="absolute w-full h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1, rotate: 360 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ rotate: { duration: 8, repeat: Infinity, ease: "linear" } }}
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(circle at 25% 25%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 75% 35%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 40% 60%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 65% 75%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 50% 50%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 20% 80%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%),
+                        radial-gradient(circle at 80% 15%, rgba(74, 222, 128, 0.8) 2%, transparent 2.5%)
+                      `
+                    }}
+                  />
+                  
+                  {/* Second layer with different rotation for enhanced effect */}
+                  <motion.div 
+                    className="absolute w-full h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.7, rotate: -360 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ rotate: { duration: 12, repeat: Infinity, ease: "linear" } }}
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(circle at 15% 15%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%),
+                        radial-gradient(circle at 85% 85%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%),
+                        radial-gradient(circle at 30% 70%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%),
+                        radial-gradient(circle at 70% 30%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%),
+                        radial-gradient(circle at 60% 85%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%),
+                        radial-gradient(circle at 85% 40%, rgba(74, 222, 128, 0.6) 1%, transparent 1.5%)
+                      `
+                    }}
+                  />
+                  
+                  {/* Pulsing overlay for angelic frequency */}
+                  <motion.div
+                    className="absolute w-full h-full rounded-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ 
+                      opacity: [0.1, 0.4, 0.1],
+                      scale: [0.9, 1.1, 0.9]
+                    }}
+                    transition={{ 
+                      duration: 2,
+                      repeat: Infinity,
+                      ease: "easeInOut"
+                    }}
+                    style={{
+                      background: "radial-gradient(circle, rgba(74, 222, 128, 0.4) 0%, rgba(74, 222, 128, 0) 70%)",
+                      filter: "blur(5px)"
+                    }}
+                  />
+                </>
               )}
               
               <canvas 
