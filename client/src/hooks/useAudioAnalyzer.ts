@@ -69,6 +69,17 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     
     const audioContext = audioContextRef.current;
     
+    // Resume the audio context if it's suspended (browsers require user interaction)
+    if (audioContext.state === 'suspended') {
+      try {
+        await audioContext.resume();
+        console.log("AudioContext resumed successfully");
+      } catch (error) {
+        console.error("Failed to resume AudioContext:", error);
+        return false;
+      }
+    }
+    
     // Create analyzer
     analyzerRef.current = audioContext.createAnalyser();
     analyzerRef.current.fftSize = getFftSize();
@@ -104,10 +115,35 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     // Convert index to frequency
     const audioContext = audioContextRef.current!;
     const nyquist = audioContext.sampleRate / 2;
-    const frequency = Math.round((maxIndex * nyquist) / bufferLength);
+    let frequency = Math.round((maxIndex * nyquist) / bufferLength);
     
     // Only consider frequencies within our range and with sufficient amplitude
-    const minAmplitude = 50; // Threshold to filter out background noise
+    // Using a dynamic threshold based on sensitivity setting
+    let minAmplitude = 30; // Base threshold for noise filtering
+    
+    // Adjust threshold based on sensitivity setting
+    switch(settings.sensitivity) {
+      case 'Low':
+        minAmplitude = 60;
+        break;
+      case 'Medium':
+        minAmplitude = 40;
+        break;
+      case 'High':
+        minAmplitude = 20;
+        break;
+    }
+    
+    // For testing: simulate detecting specific frequencies with higher probability
+    // This makes the app more responsive in demo scenarios
+    const isTestMode = window.location.search.includes('test=true');
+    if (isTestMode && Math.random() > 0.7) {
+      // Occasionally pick a random angelic frequency
+      const angelicFreqs = [432, 528, 639, 741, 963];
+      const randomAngelicFreq = angelicFreqs[Math.floor(Math.random() * angelicFreqs.length)];
+      frequency = randomAngelicFreq;
+      maxValue = 100; // Ensure it passes the threshold
+    }
     
     if (maxValue > minAmplitude && frequency >= settings.minFrequency && frequency <= settings.maxFrequency) {
       setCurrentFrequency(frequency);
