@@ -108,7 +108,7 @@ export function FrequencyVisualizer({
               
               {hasAngelicFrequency && (
                 <>
-                  {/* Enhanced disco ball effect */}
+                  {/* Enhanced disco ball effect with multiple layers */}
                   <motion.div 
                     className="absolute w-full h-full"
                     initial={{ opacity: 0 }}
@@ -146,6 +146,73 @@ export function FrequencyVisualizer({
                       `
                     }}
                   />
+                  
+                  {/* Third layer with smaller, faster light dots */}
+                  <motion.div 
+                    className="absolute w-full h-full"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 0.9, rotate: 180 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ rotate: { duration: 5, repeat: Infinity, ease: "linear" } }}
+                    style={{
+                      backgroundImage: `
+                        radial-gradient(circle at 45% 45%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 55% 55%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 35% 65%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 65% 35%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 25% 25%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 75% 75%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 85% 15%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%),
+                        radial-gradient(circle at 15% 85%, rgba(255, 255, 255, 0.9) 0.5%, transparent 0.7%)
+                      `
+                    }}
+                  />
+                  
+                  {/* Central glow effect */}
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <motion.div 
+                      className="w-16 h-16 rounded-full"
+                      initial={{ opacity: 0 }}
+                      animate={{ 
+                        opacity: [0.4, 0.7, 0.4],
+                        scale: [0.8, 1.1, 0.8]
+                      }}
+                      transition={{ 
+                        duration: 3,
+                        repeat: Infinity,
+                        ease: "easeInOut"
+                      }}
+                      style={{
+                        background: "radial-gradient(circle, rgba(74, 222, 128, 0.8) 0%, rgba(74, 222, 128, 0) 70%)",
+                        boxShadow: "0 0 20px 5px rgba(74, 222, 128, 0.3)",
+                        filter: "blur(5px)"
+                      }}
+                    />
+                  </div>
+                  
+                  {/* Light rays emanating from center */}
+                  <div className="absolute inset-0 overflow-hidden">
+                    {[...Array(12)].map((_, i) => (
+                      <motion.div
+                        key={`ray-${i}`}
+                        className="absolute top-1/2 left-1/2 origin-left h-0.5 bg-gradient-to-r from-green-400 to-transparent"
+                        style={{ 
+                          width: '50%',
+                          transform: `rotate(${i * 30}deg)`,
+                          opacity: 0.3
+                        }}
+                        animate={{
+                          opacity: [0.1, 0.4, 0.1],
+                          scaleX: [0.7, 1.3, 0.7]
+                        }}
+                        transition={{
+                          duration: 3 + i % 3,
+                          repeat: Infinity,
+                          delay: i * 0.2
+                        }}
+                      />
+                    ))}
+                  </div>
                   
                   {/* Pulsing overlay for angelic frequency */}
                   <motion.div
