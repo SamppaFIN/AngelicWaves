@@ -29,7 +29,9 @@ export default function Home() {
     toggleDetector,
     resetDetectedFrequencies,
     microphoneAccess,
-    requestMicrophoneAccess
+    requestMicrophoneAccess,
+    isSimulationMode,
+    toggleSimulationMode
   } = useAudioAnalyzer(settings);
 
   const handleToggleClick = useCallback(() => {
@@ -78,17 +80,32 @@ export default function Home() {
               <span className="text-green-400 mr-2">✧</span>
               Angelic Frequency Detector
             </h1>
-            <div className="text-xs text-green-400/60 mt-1">Demo Mode Enabled</div>
+            {isSimulationMode && (
+              <div className="text-xs text-green-400/60 mt-1">Simulation Mode Enabled</div>
+            )}
           </div>
           
-          <div className="flex items-center">
-            <span className="mr-3 text-sm text-gray-300">
-              {isActive ? 'Active' : 'Inactive'}
-            </span>
-            <Switch
-              checked={isActive}
-              onCheckedChange={handleToggleClick}
-            />
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center">
+              <span className="mr-3 text-sm text-gray-300">
+                {isActive ? 'Active' : 'Inactive'}
+              </span>
+              <Switch
+                checked={isActive}
+                onCheckedChange={handleToggleClick}
+              />
+            </div>
+            
+            <button 
+              onClick={toggleSimulationMode}
+              className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                isSimulationMode 
+                  ? 'bg-green-600 hover:bg-green-700 text-white' 
+                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+              }`}
+            >
+              {isSimulationMode ? 'Using Simulation' : 'Use Simulation'}
+            </button>
           </div>
         </div>
       </header>

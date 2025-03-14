@@ -13,6 +13,8 @@ interface AudioAnalyzerResult {
   resetDetectedFrequencies: () => void;
   microphoneAccess: boolean;
   requestMicrophoneAccess: () => Promise<boolean>;
+  isSimulationMode: boolean;
+  toggleSimulationMode: () => void;
 }
 
 export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResult {
@@ -22,6 +24,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const [microphoneAccess, setMicrophoneAccess] = useState(false);
   const [hasAngelicFrequency, setHasAngelicFrequency] = useState(false);
   const [detectedFrequencies, setDetectedFrequencies] = useState<DetectedFrequency[]>([]);
+  const [isSimulationMode, setIsSimulationMode] = useState(false);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
@@ -134,11 +137,10 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         break;
     }
     
-    // Enhanced demo mode that simulates a mix of random frequencies and angelic frequencies
-    // This makes the app engaging for demos without requiring microphone input
-    const isTestMode = window.location.search.includes('test=true') || true; // Always enable test mode
+    // Simulation mode that generates frequencies without using the microphone
+    // Only activate when simulation mode is explicitly enabled
     
-    if (isTestMode && isActive) {
+    if (isSimulationMode && isActive) {
       // Create more realistic wave patterns with time-based variations
       // Use the current timestamp to create a slow-changing pattern
       const timePatternFactor = Math.sin(Date.now() / 5000) * 0.5 + 0.5; // 0-1 value that changes slowly
@@ -294,6 +296,15 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const resetDetectedFrequencies = useCallback(() => {
     setDetectedFrequencies([]);
   }, []);
+  
+  // Toggle simulation mode (for demo purposes)
+  const toggleSimulationMode = useCallback(() => {
+    setIsSimulationMode(prev => !prev);
+    // If turning off simulation mode, ensure microphone access for real input
+    if (isSimulationMode && !microphoneAccess) {
+      requestMicrophoneAccess();
+    }
+  }, [isSimulationMode, microphoneAccess, requestMicrophoneAccess]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -325,6 +336,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     toggleDetector,
     resetDetectedFrequencies,
     microphoneAccess,
-    requestMicrophoneAccess
+    requestMicrophoneAccess,
+    isSimulationMode,
+    toggleSimulationMode
   };
 }
