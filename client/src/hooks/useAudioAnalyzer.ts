@@ -208,8 +208,12 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       const isAngelic = isAngelicFrequency(frequency);
       setHasAngelicFrequency(isAngelic);
       
-      // Set status based on detection
-      setDetectionStatus(isAngelic ? "Angelic frequency detected!" : "Detecting...");
+      // Set status based on detection and mode
+      if (isAngelic) {
+        setDetectionStatus(isSimulationMode ? "Simulation: Angelic frequency detected!" : "Angelic frequency detected!");
+      } else {
+        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+      }
       
       // Track frequency detection for analysis
       const now = Date.now();
@@ -240,13 +244,13 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       if (currentFrequency !== 0) {
         setCurrentFrequency(0);
         setHasAngelicFrequency(false);
-        setDetectionStatus("Detecting...");
+        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
       }
     }
     
     // Continue analyzing
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-  }, [isActive, settings.minFrequency, settings.maxFrequency, currentFrequency]);
+  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, currentFrequency]);
 
   // Toggle detector on/off
   const toggleDetector = useCallback(async () => {
@@ -286,11 +290,11 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       const success = await setupAudioAnalysis();
       if (success) {
         setIsActive(true);
-        setDetectionStatus("Detecting...");
+        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
         animationFrameRef.current = requestAnimationFrame(analyzeAudio);
       }
     }
-  }, [isActive, setupAudioAnalysis, analyzeAudio]);
+  }, [isActive, isSimulationMode, setupAudioAnalysis, analyzeAudio]);
 
   // Reset detected frequencies
   const resetDetectedFrequencies = useCallback(() => {
@@ -299,12 +303,24 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   
   // Toggle simulation mode (for demo purposes)
   const toggleSimulationMode = useCallback(() => {
-    setIsSimulationMode(prev => !prev);
+    // Toggle simulation mode state
+    setIsSimulationMode(prev => {
+      const newValue = !prev;
+      
+      // If detector is active, update the status message right away
+      if (isActive) {
+        setDetectionStatus(newValue ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+      }
+      
+      // Return the new value to complete the state update
+      return newValue;
+    });
+    
     // If turning off simulation mode, ensure microphone access for real input
     if (isSimulationMode && !microphoneAccess) {
       requestMicrophoneAccess();
     }
-  }, [isSimulationMode, microphoneAccess, requestMicrophoneAccess]);
+  }, [isActive, isSimulationMode, microphoneAccess, requestMicrophoneAccess]);
 
   // Cleanup on unmount
   useEffect(() => {
