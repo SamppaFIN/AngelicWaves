@@ -73,10 +73,13 @@ export default function Home() {
       {/* Header */}
       <header className="fixed top-0 w-full bg-gray-800 shadow-md z-10">
         <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-          <h1 className="text-xl font-semibold flex items-center">
-            <span className="text-green-400 mr-2">✧</span>
-            Angelic Frequency Detector
-          </h1>
+          <div>
+            <h1 className="text-xl font-semibold flex items-center">
+              <span className="text-green-400 mr-2">✧</span>
+              Angelic Frequency Detector
+            </h1>
+            <div className="text-xs text-green-400/60 mt-1">Demo Mode Enabled</div>
+          </div>
           
           <div className="flex items-center">
             <span className="mr-3 text-sm text-gray-300">

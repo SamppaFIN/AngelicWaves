@@ -134,22 +134,69 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         break;
     }
     
-    // For testing or demonstration purposes
-    // This helps make the visualization more engaging even without proper audio input
-    const isTestMode = window.location.search.includes('test=true') || true; // Always enable test mode for now
+    // Enhanced demo mode that simulates a mix of random frequencies and angelic frequencies
+    // This makes the app engaging for demos without requiring microphone input
+    const isTestMode = window.location.search.includes('test=true') || true; // Always enable test mode
     
-    if (isTestMode && Math.random() > 0.8) {
-      // Generate a random frequency near one of the angelic frequencies
-      // This makes the demo more realistic with frequencies that approach target values
-      const angelicFreqs = [432, 528, 639, 741, 963];
-      const randomAngelicIndex = Math.floor(Math.random() * angelicFreqs.length);
-      const randomAngelicFreq = angelicFreqs[randomAngelicIndex];
+    if (isTestMode && isActive) {
+      // Create more realistic wave patterns with time-based variations
+      // Use the current timestamp to create a slow-changing pattern
+      const timePatternFactor = Math.sin(Date.now() / 5000) * 0.5 + 0.5; // 0-1 value that changes slowly
       
-      // Add a small variance to make it more realistic
-      // Sometimes exactly match the frequency, sometimes be close
-      const variance = Math.random() > 0.3 ? 0 : (Math.random() * 10 - 5);
-      frequency = Math.round(randomAngelicFreq + variance);
-      maxValue = 100; // Ensure it passes the threshold
+      // Use a second time factor with different period for more complex patterns
+      const timePatternFactor2 = Math.sin(Date.now() / 3700) * 0.5 + 0.5; 
+      
+      // The combined pattern factor determines what kind of frequencies we'll generate
+      const patternFactor = (timePatternFactor + timePatternFactor2) / 2;
+      
+      // Determine what type of frequency to generate based on time patterns
+      if (patternFactor > 0.7) {  // Angelic frequencies during "peaks"
+        // Generate a frequency near one of the angelic frequencies
+        const angelicFreqs = [432, 528, 639, 741, 963];
+        
+        // Keep the same angelic frequency for periods of time using time-based selection
+        const angelicIndex = Math.floor((Date.now() / 8000) % angelicFreqs.length);
+        const targetFreq = angelicFreqs[angelicIndex];
+        
+        // Add a wave-like variance that changes over time
+        const waveVariance = Math.sin(Date.now() / 800) * 4;
+        frequency = Math.round(targetFreq + waveVariance);
+        
+        // Amplitude varies with time as well to simulate waveform strength changes
+        const amplitudeVariation = Math.sin(Date.now() / 1200) * 15 + 5;
+        maxValue = 90 + amplitudeVariation;
+      } 
+      else if (patternFactor > 0.4) {  // Frequencies in the target range
+        // Generate frequencies that drift slowly through the range
+        const range = settings.maxFrequency - settings.minFrequency;
+        const driftPosition = (Math.sin(Date.now() / 10000) * 0.5 + 0.5) * range;
+        
+        // Add a smaller rapid fluctuation to the drift
+        const fluctuation = Math.sin(Date.now() / 400) * 8;
+        
+        frequency = Math.round(settings.minFrequency + driftPosition + fluctuation);
+        maxValue = 60 + Math.floor(Math.random() * 30 * patternFactor);
+      }
+      else if (patternFactor < 0.2) {  // Periods of relative silence
+        // Sometimes have no significant frequency (simulate silence or background noise)
+        frequency = 0;
+        maxValue = 5 + Math.floor(Math.random() * 15);
+      }
+      else {  // Random frequencies outside the target range during "valleys"
+        // Generate frequencies that jump randomly outside the range
+        // Use time-based randomness to create periods of stability
+        const jumpTime = Math.floor(Date.now() / 2000);
+        const stableRandom = Math.sin(jumpTime * 1.7) * 300;
+        
+        // Determine if we're below or above the range
+        const isBelow = Math.sin(jumpTime) > 0;
+        const baseFreq = isBelow ? 
+          (settings.minFrequency - 150) : 
+          (settings.maxFrequency + 100);
+        
+        frequency = Math.round(baseFreq + stableRandom);
+        maxValue = 30 + Math.floor(Math.random() * 30 * (1 - patternFactor));
+      }
     }
     
     if (maxValue > minAmplitude && frequency >= settings.minFrequency && frequency <= settings.maxFrequency) {
