@@ -151,33 +151,44 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       // The combined pattern factor determines what kind of frequencies we'll generate
       const patternFactor = (timePatternFactor + timePatternFactor2) / 2;
       
-      // Determine what type of frequency to generate based on time patterns
-      if (patternFactor > 0.7) {  // Angelic frequencies during "peaks"
+      // Increased probability of finding angelic frequencies (lowering the threshold from 0.7 to 0.6)
+      if (patternFactor > 0.6) {  // Angelic frequencies during "peaks" - increased chance
         // Generate a frequency near one of the angelic frequencies
         const angelicFreqs = [432, 528, 639, 741, 963];
         
-        // Keep the same angelic frequency for periods of time using time-based selection
-        const angelicIndex = Math.floor((Date.now() / 8000) % angelicFreqs.length);
+        // Keep the same angelic frequency for shorter periods to have more variety
+        // Reduced from 8000ms to 5000ms for more frequent changes
+        const angelicIndex = Math.floor((Date.now() / 5000) % angelicFreqs.length);
         const targetFreq = angelicFreqs[angelicIndex];
         
-        // Add a wave-like variance that changes over time
-        const waveVariance = Math.sin(Date.now() / 800) * 4;
+        // Add a more dynamic wave-like variance that changes faster over time
+        // Increased oscillation frequency and amplitude for more movement
+        const waveVariance = Math.sin(Date.now() / 500) * 6;
         frequency = Math.round(targetFreq + waveVariance);
         
         // Amplitude varies with time as well to simulate waveform strength changes
-        const amplitudeVariation = Math.sin(Date.now() / 1200) * 15 + 5;
+        // Made amplitude variation more pronounced
+        const amplitudeVariation = Math.sin(Date.now() / 800) * 20 + 10;
         maxValue = 90 + amplitudeVariation;
       } 
       else if (patternFactor > 0.4) {  // Frequencies in the target range
-        // Generate frequencies that drift slowly through the range
+        // Generate frequencies that drift more actively through the range
         const range = settings.maxFrequency - settings.minFrequency;
-        const driftPosition = (Math.sin(Date.now() / 10000) * 0.5 + 0.5) * range;
         
-        // Add a smaller rapid fluctuation to the drift
-        const fluctuation = Math.sin(Date.now() / 400) * 8;
+        // Faster drift through the frequency range (changed from 10000ms to 6000ms)
+        const driftPosition = (Math.sin(Date.now() / 6000) * 0.5 + 0.5) * range;
         
-        frequency = Math.round(settings.minFrequency + driftPosition + fluctuation);
-        maxValue = 60 + Math.floor(Math.random() * 30 * patternFactor);
+        // Add more pronounced rapid fluctuations to the drift (increased amplitude)
+        const fluctuation = Math.sin(Date.now() / 300) * 15;
+        
+        // Add a secondary fluctuation component for more natural movement
+        const secondaryFluctuation = Math.cos(Date.now() / 700) * 8;
+        
+        frequency = Math.round(settings.minFrequency + driftPosition + fluctuation + secondaryFluctuation);
+        
+        // More dynamic amplitude changes
+        const amplitudeBase = 60 + Math.sin(Date.now() / 1500) * 20;
+        maxValue = amplitudeBase + Math.floor(Math.random() * 20 * patternFactor);
       }
       else if (patternFactor < 0.2) {  // Periods of relative silence
         // Sometimes have no significant frequency (simulate silence or background noise)
@@ -185,19 +196,27 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         maxValue = 5 + Math.floor(Math.random() * 15);
       }
       else {  // Random frequencies outside the target range during "valleys"
-        // Generate frequencies that jump randomly outside the range
-        // Use time-based randomness to create periods of stability
-        const jumpTime = Math.floor(Date.now() / 2000);
-        const stableRandom = Math.sin(jumpTime * 1.7) * 300;
+        // Generate frequencies that jump more dynamically outside the range
+        // Use faster time-based randomness to create more frequent changes
+        const jumpTime = Math.floor(Date.now() / 1500); // Faster jumps
         
-        // Determine if we're below or above the range
-        const isBelow = Math.sin(jumpTime) > 0;
+        // More dynamic random variations
+        const stableRandom = Math.sin(jumpTime * 2.3) * 350; // Wider range and faster oscillation
+        
+        // Add a secondary oscillation component for more natural movement
+        const secondaryRandom = Math.cos(Date.now() / 800) * 50;
+        
+        // Determine if we're below or above the range with more frequent transitions
+        const isBelow = Math.sin(jumpTime * 1.3) > 0;
         const baseFreq = isBelow ? 
-          (settings.minFrequency - 150) : 
-          (settings.maxFrequency + 100);
+          (settings.minFrequency - 180) : // Further from the range
+          (settings.maxFrequency + 120);
         
-        frequency = Math.round(baseFreq + stableRandom);
-        maxValue = 30 + Math.floor(Math.random() * 30 * (1 - patternFactor));
+        frequency = Math.round(baseFreq + stableRandom + secondaryRandom);
+        
+        // More dynamic amplitude changes
+        const amplitudeBase = 35 + Math.sin(Date.now() / 1200) * 15;
+        maxValue = amplitudeBase + Math.floor(Math.random() * 25 * (1 - patternFactor));
       }
     }
     
