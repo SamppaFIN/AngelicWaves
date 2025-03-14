@@ -260,10 +260,27 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       }
     } else {
       // No significant frequency detected
-      if (currentFrequency !== 0) {
+      // Generate a random low-amplitude frequency value when in simulation mode 
+      // rather than showing 0 Hz
+      if (isSimulationMode) {
+        // Generate a random frequency within the range, but at lower amplitude
+        const randomFreq = Math.round(
+          settings.minFrequency + 
+          Math.random() * (settings.maxFrequency - settings.minFrequency)
+        );
+        
+        // Add some movement to the random frequency
+        const fluctuation = Math.sin(Date.now() / 500) * 15;
+        
+        // Set a random frequency value
+        setCurrentFrequency(randomFreq + Math.round(fluctuation));
+        setHasAngelicFrequency(false);
+        setDetectionStatus("Simulation Mode - Detecting...");
+      } else if (currentFrequency !== 0) {
+        // In microphone mode, use the traditional 0 Hz display
         setCurrentFrequency(0);
         setHasAngelicFrequency(false);
-        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        setDetectionStatus("Microphone - Detecting...");
       }
     }
     
@@ -310,6 +327,17 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       if (success) {
         setIsActive(true);
         setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        
+        // Initialize with a random frequency value if in simulation mode
+        if (isSimulationMode) {
+          // Start with a random frequency within range
+          const initialFreq = Math.round(
+            settings.minFrequency + 
+            Math.random() * (settings.maxFrequency - settings.minFrequency)
+          );
+          setCurrentFrequency(initialFreq);
+        }
+        
         animationFrameRef.current = requestAnimationFrame(analyzeAudio);
       }
     }
@@ -329,6 +357,19 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       // If detector is active, update the status message right away
       if (isActive) {
         setDetectionStatus(newValue ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        
+        // When switching to simulation mode, immediately set a random frequency
+        // so the user doesn't see 0 Hz
+        if (newValue) {
+          const initialSimFreq = Math.round(
+            settings.minFrequency + 
+            Math.random() * (settings.maxFrequency - settings.minFrequency)
+          );
+          setCurrentFrequency(initialSimFreq);
+        } else {
+          // When switching back to microphone, reset frequency until detected
+          setCurrentFrequency(0);
+        }
       }
       
       // Return the new value to complete the state update
@@ -339,7 +380,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     if (isSimulationMode && !microphoneAccess) {
       requestMicrophoneAccess();
     }
-  }, [isActive, isSimulationMode, microphoneAccess, requestMicrophoneAccess]);
+  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, microphoneAccess, requestMicrophoneAccess]);
 
   // Cleanup on unmount
   useEffect(() => {
