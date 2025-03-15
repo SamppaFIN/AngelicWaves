@@ -12,6 +12,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [showDebug, setShowDebug] = useState(false);
   const [settings, setSettings] = useState<FrequencySettings>({
     minFrequency: 432,
     maxFrequency: 963,
@@ -131,6 +132,18 @@ export default function Home() {
       <AnalysisPanel
         detectedFrequencies={detectedFrequencies}
         onSaveReport={handleSaveReport}
+      />
+
+      <button
+        onClick={() => setShowDebug(prev => !prev)}
+        className="fixed bottom-4 left-4 bg-slate-800 text-white px-3 py-2 rounded-lg hover:bg-slate-700"
+      >
+        {showDebug ? 'Hide Debug' : 'Show Debug'}
+      </button>
+
+      <FrequencyDebug
+        frequencies={activeFrequencies}
+        isVisible={showDebug}
       />
 
       <MicrophonePermission
