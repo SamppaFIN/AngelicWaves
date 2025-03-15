@@ -104,27 +104,21 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     const dataArray = new Uint8Array(bufferLength);
     analyzer.getByteFrequencyData(dataArray);
     
-    // Find multiple significant frequencies
-    const audioContext = audioContextRef.current!;
-    const nyquist = audioContext.sampleRate / 2;
-    const frequencies: Array<{frequency: number, amplitude: number}> = [];
+    // Find dominant frequency
+    let maxValue = 0;
+    let maxIndex = 0;
     
     for (let i = 0; i < bufferLength; i++) {
-      const amplitude = dataArray[i];
-      if (amplitude > minAmplitude) {
-        const frequency = Math.round((i * nyquist) / bufferLength);
-        if (frequency >= settings.minFrequency && frequency <= settings.maxFrequency) {
-          frequencies.push({ frequency, amplitude });
-        }
+      if (dataArray[i] > maxValue) {
+        maxValue = dataArray[i];
+        maxIndex = i;
       }
     }
     
-    // Sort by amplitude and take top frequency as current
-    frequencies.sort((a, b) => b.amplitude - a.amplitude);
-    let frequency = frequencies.length > 0 ? frequencies[0].frequency : 0;
-    
-    // Make frequencies available for debug view
-    setActiveFrequencies(frequencies);
+    // Convert index to frequency
+    const audioContext = audioContextRef.current!;
+    const nyquist = audioContext.sampleRate / 2;
+    let frequency = Math.round((maxIndex * nyquist) / bufferLength);
     
     // Only consider frequencies within our range and with sufficient amplitude
     // Using a dynamic threshold based on sensitivity setting
