@@ -31,7 +31,11 @@ export default function Home() {
     microphoneAccess,
     requestMicrophoneAccess,
     isSimulationMode,
-    toggleSimulationMode
+    toggleSimulationMode,
+    isDemoMode,
+    toggleDemoMode,
+    showCalculationMethod,
+    toggleCalculationMethod
   } = useAudioAnalyzer(settings);
 
   const handleToggleClick = useCallback(() => {
@@ -96,16 +100,40 @@ export default function Home() {
               />
             </div>
             
-            <button 
-              onClick={toggleSimulationMode}
-              className={`text-xs px-3 py-1 rounded-md transition-colors ${
-                isSimulationMode 
-                  ? 'bg-green-600 hover:bg-green-700 text-white' 
-                  : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
-              }`}
-            >
-              {isSimulationMode ? 'Using Simulation' : 'Use Simulation'}
-            </button>
+            <div className="flex space-x-2">
+              <button 
+                onClick={toggleSimulationMode}
+                className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                  isSimulationMode 
+                    ? 'bg-green-600 hover:bg-green-700 text-white' 
+                    : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                }`}
+              >
+                {isSimulationMode ? 'Using Simulation' : 'Use Simulation'}
+              </button>
+              
+              {isActive && (
+                <button 
+                  onClick={toggleDemoMode}
+                  className={`text-xs px-3 py-1 rounded-md transition-colors ${
+                    isDemoMode 
+                      ? 'bg-purple-600 hover:bg-purple-700 text-white' 
+                      : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
+                  }`}
+                >
+                  {isDemoMode ? 'Exit Demo' : 'Show Angelic Frequency'}
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center mt-1">
+              <button
+                onClick={toggleCalculationMethod}
+                className="text-xs underline text-gray-400 hover:text-gray-300"
+              >
+                {showCalculationMethod ? 'Hide Calculation Method' : 'Show Calculation Method'}
+              </button>
+            </div>
           </div>
         </div>
       </header>
@@ -119,6 +147,29 @@ export default function Home() {
           minFrequency={settings.minFrequency}
           maxFrequency={settings.maxFrequency}
         />
+        
+        {showCalculationMethod && (
+          <div className="bg-gray-800/70 p-4 rounded-lg mb-6 text-sm">
+            <h3 className="text-green-400 font-medium mb-2">How Frequencies Are Calculated</h3>
+            <div className="space-y-2 text-gray-300">
+              <p>The frequency detection uses a Fast Fourier Transform (FFT) algorithm to analyze audio signals:</p>
+              <ol className="list-decimal pl-5 space-y-1">
+                <li>Audio is sampled at ~44.1kHz through your microphone</li>
+                <li>The signal is divided into frequency bins using FFT analysis</li>
+                <li>We identify the dominant frequency bin with the highest amplitude</li>
+                <li>The bin index is converted to Hz using the formula: <code className="px-1 bg-gray-700 rounded">frequency = (binIndex * sampleRate/2) / totalBins</code></li>
+                <li>Noise filtering is applied based on your sensitivity setting ({settings.sensitivity})</li>
+                <li>Frequencies are only displayed when they fall within your set range ({settings.minFrequency}Hz - {settings.maxFrequency}Hz)</li>
+              </ol>
+              {isSimulationMode && (
+                <p className="text-amber-400 mt-2">Note: In simulation mode, frequencies are generated algorithmically rather than detected from audio input.</p>
+              )}
+              {isDemoMode && (
+                <p className="text-purple-400 mt-2">Note: Demo mode is currently active, showing a specific angelic frequency (432Hz).</p>
+              )}
+            </div>
+          </div>
+        )}
         
         <FrequencyThresholds
           settings={settings}
