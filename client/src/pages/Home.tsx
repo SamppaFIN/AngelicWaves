@@ -4,6 +4,7 @@ import { FrequencyThresholds } from "@/components/FrequencyThresholds";
 import { AngelicFrequencies } from "@/components/AngelicFrequencies";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { MicrophonePermission } from "@/components/MicrophonePermission";
+import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { Switch } from "@/components/ui/switch";
 import { FrequencySettings, AnalysisReportData } from "@/lib/types";
@@ -188,6 +189,14 @@ export default function Home() {
         open={showPermissionModal}
         onAllow={handleAllowMicrophone}
         onCancel={handleCancelMicrophone}
+      />
+      
+      {/* Frequency Explorer Mascot */}
+      <FrequencyExplorerMascot
+        isActive={isActive}
+        hasAngelicFrequency={hasAngelicFrequency}
+        currentFrequency={currentFrequency}
+        isDemoMode={isDemoMode}
       />
     </div>
   );
