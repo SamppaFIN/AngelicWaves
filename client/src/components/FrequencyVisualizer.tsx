@@ -21,6 +21,22 @@ export function FrequencyVisualizer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [discoLights, setDiscoLights] = useState<{x: number, y: number, size: number, delay: number}[]>([]);
 
+  // Generate disco light positions when an angelic frequency is detected
+  useEffect(() => {
+    if (hasAngelicFrequency) {
+      // Create 15 random disco lights
+      const newLights = Array.from({ length: 15 }, () => ({
+        x: Math.random() * 100, // percentage position
+        y: Math.random() * 100,
+        size: 20 + Math.random() * 60, // size in pixels
+        delay: Math.random() * 0.5 // animation delay
+      }));
+      setDiscoLights(newLights);
+    } else {
+      setDiscoLights([]);
+    }
+  }, [hasAngelicFrequency]);
+
   useEffect(() => {
     if (!isActive || !canvasRef.current) return;
 
@@ -40,9 +56,9 @@ export function FrequencyVisualizer({
       if (currentFrequency > 0) {
         // Draw Tesla-style frequency circles for each angelic frequency
         angelicFrequencies.forEach((freq, index) => {
-          const isActive = Math.abs(currentFrequency - freq.frequency) < 5;
+          const isActive = Math.abs(currentFrequency - freq.frequency) < 15; // Increased tolerance
           const color = isActive ? 
-            `hsl(${index * 60}, 100%, 50%)` : 
+            `hsla(${140}, 80%, 60%, ${0.7 + Math.sin(phase) * 0.3})` : 
             'rgba(74, 222, 128, 0.2)';
 
           drawTeslaPattern(ctx, width/2, height/2, 100 + index * 20, phase, color, 6 + index);
@@ -53,14 +69,14 @@ export function FrequencyVisualizer({
       }
 
       // Update phase for animation
-      phase += 0.02;
+      phase += hasAngelicFrequency ? 0.04 : 0.02; // Faster animation when angelic frequency detected
       animationFrameId = requestAnimationFrame(draw);
     };
 
     draw();
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isActive, currentFrequency]);
+  }, [isActive, currentFrequency, hasAngelicFrequency]);
 
   function drawTeslaPattern(
     ctx: CanvasRenderingContext2D, 
@@ -119,16 +135,38 @@ export function FrequencyVisualizer({
 
   return (
     <div className="relative w-full aspect-square max-w-2xl mx-auto mb-8">
+      {/* Disco ball effect overlay when angelic frequency is detected */}
+      {hasAngelicFrequency && (
+        <>
+          <div className="disco-ball-effect" />
+          {discoLights.map((light, index) => (
+            <div 
+              key={index}
+              className="disco-light"
+              style={{
+                left: `${light.x}%`,
+                top: `${light.y}%`,
+                width: `${light.size}px`,
+                height: `${light.size}px`,
+                opacity: 0.6 + Math.random() * 0.4,
+                animationDelay: `${light.delay}s`
+              }}
+            />
+          ))}
+        </>
+      )}
+      
       <canvas
         ref={canvasRef}
         className="w-full h-full"
       />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
-        <div className="text-green-400 text-3xl font-bold">
+      
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-10">
+        <div className={`text-3xl font-bold ${hasAngelicFrequency ? 'text-white animate-pulse' : 'text-green-400'}`}>
           {Math.round(currentFrequency)} Hz
         </div>
-        <div className="text-gray-400">
-          {detectionStatus}
+        <div className={`${hasAngelicFrequency ? 'text-green-200' : 'text-gray-400'}`}>
+          {hasAngelicFrequency ? '✨ Angelic Frequency Detected ✨' : detectionStatus}
         </div>
       </div>
     </div>
