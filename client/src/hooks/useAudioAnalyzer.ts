@@ -409,6 +409,43 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     };
   }, []);
 
+  // Toggle demo mode function - instantly shows an angelic frequency
+  const toggleDemoMode = useCallback(() => {
+    setIsDemoMode(prev => {
+      const newDemoValue = !prev;
+      
+      // If turning on demo mode, automatically set to a specific angelic frequency
+      if (newDemoValue && isActive) {
+        // Choose a specific angelic frequency to display - e.g., 432 Hz
+        setCurrentFrequency(432);
+        setHasAngelicFrequency(true);
+        setDetectionStatus("Demo Mode: Showing Angelic Frequency (432 Hz)");
+      } else if (isActive) {
+        // If turning off, go back to normal detection or simulation
+        if (isSimulationMode) {
+          const initialSimFreq = Math.round(
+            settings.minFrequency + 
+            Math.random() * (settings.maxFrequency - settings.minFrequency)
+          );
+          setCurrentFrequency(initialSimFreq);
+          setHasAngelicFrequency(false);
+          setDetectionStatus("Simulation Mode - Detecting...");
+        } else {
+          setCurrentFrequency(0);
+          setHasAngelicFrequency(false);
+          setDetectionStatus("Microphone - Detecting...");
+        }
+      }
+      
+      return newDemoValue;
+    });
+  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency]);
+  
+  // Toggle showing calculation method
+  const toggleCalculationMethod = useCallback(() => {
+    setShowCalculationMethod(prev => !prev);
+  }, []);
+  
   return {
     isActive,
     currentFrequency,
@@ -420,6 +457,10 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     microphoneAccess,
     requestMicrophoneAccess,
     isSimulationMode,
-    toggleSimulationMode
+    toggleSimulationMode,
+    isDemoMode,
+    toggleDemoMode,
+    showCalculationMethod,
+    toggleCalculationMethod
   };
 }
