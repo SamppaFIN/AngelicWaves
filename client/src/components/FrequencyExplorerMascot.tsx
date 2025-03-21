@@ -163,23 +163,34 @@ export function FrequencyExplorerMascot({
             </>
           )}
           
-          {/* Face */}
-          <circle cx="45" cy="55" r="5" fill="white" /> {/* Left eye */}
-          <circle cx="65" cy="55" r="5" fill="white" /> {/* Right eye */}
-          
-          {/* Eye pupils that move based on state */}
-          <circle 
-            cx={mascotState === 'excited' ? 47 : (mascotState === 'searching' ? 46 : 45)} 
-            cy={mascotState === 'excited' ? 53 : 55} 
-            r="2.5" 
-            fill="black" 
-          /> {/* Left pupil */}
-          <circle 
-            cx={mascotState === 'excited' ? 67 : (mascotState === 'searching' ? 66 : 65)} 
-            cy={mascotState === 'excited' ? 53 : 55} 
-            r="2.5" 
-            fill="black" 
-          /> {/* Right pupil */}
+          {/* Face - Eyes that blink */}
+          {blinkCounter > 0 ? (
+            // Closed eyes when blinking
+            <>
+              <path d="M40 55 Q45 52 50 55" stroke="white" strokeWidth="2" fill="none" /> {/* Left eye closed */}
+              <path d="M60 55 Q65 52 70 55" stroke="white" strokeWidth="2" fill="none" /> {/* Right eye closed */}
+            </>
+          ) : (
+            // Open eyes
+            <>
+              <circle cx="45" cy="55" r="5" fill="white" /> {/* Left eye */}
+              <circle cx="65" cy="55" r="5" fill="white" /> {/* Right eye */}
+              
+              {/* Eye pupils that move based on state */}
+              <circle 
+                cx={mascotState === 'excited' ? 47 : (mascotState === 'searching' ? 46 : 45)} 
+                cy={mascotState === 'excited' ? 53 : 55} 
+                r="2.5" 
+                fill="black" 
+              /> {/* Left pupil */}
+              <circle 
+                cx={mascotState === 'excited' ? 67 : (mascotState === 'searching' ? 66 : 65)} 
+                cy={mascotState === 'excited' ? 53 : 55} 
+                r="2.5" 
+                fill="black" 
+              /> {/* Right pupil */}
+            </>
+          )}
           
           {/* Different mouth based on state */}
           {mascotState === 'idle' && (
@@ -190,6 +201,12 @@ export function FrequencyExplorerMascot({
           )}
           {mascotState === 'excited' && (
             <path d="M40 75 Q55 85 70 75" stroke="white" strokeWidth="3" fill="white" />
+          )}
+          {mascotState === 'dancing' && (
+            <path d="M40 75 Q55 72 70 75 Q55 78 40 75" stroke="white" strokeWidth="2" fill="white" />
+          )}
+          {mascotState === 'listening' && (
+            <path d="M45 75 L65 75" stroke="white" strokeWidth="2" />
           )}
           
           {/* Antenna with frequency pulse */}

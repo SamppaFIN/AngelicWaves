@@ -1,4 +1,4 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { angelicFrequencies } from "@/lib/frequencyAnalysis";
 
 interface FrequencyVisualizerProps {
@@ -19,6 +19,7 @@ export function FrequencyVisualizer({
   maxFrequency
 }: FrequencyVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [discoLights, setDiscoLights] = useState<{x: number, y: number, size: number, delay: number}[]>([]);
 
   useEffect(() => {
     if (!isActive || !canvasRef.current) return;
