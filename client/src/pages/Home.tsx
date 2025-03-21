@@ -2,6 +2,7 @@ import { useState, useCallback } from "react";
 import { FrequencyVisualizer } from "@/components/FrequencyVisualizer";
 import { FrequencyThresholds } from "@/components/FrequencyThresholds";
 import { AngelicFrequencies } from "@/components/AngelicFrequencies";
+import { FrequencyHistory } from "@/components/FrequencyHistory";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { MicrophonePermission } from "@/components/MicrophonePermission";
 import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
@@ -202,6 +203,8 @@ export default function Home() {
         />
         
         <AngelicFrequencies />
+        
+        <FrequencyHistory />
       </main>
 
       <AnalysisPanel
