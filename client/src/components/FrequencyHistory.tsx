@@ -23,6 +23,18 @@ const soundHealingProjects = [
   { name: 'Binaural Beats Research', frequencies: 'Delta, Theta, Alpha, Beta, Gamma waves', description: 'Brain entrainment frequencies for meditation and focus' }
 ];
 
+// Religious/spiritual references to frequencies
+const religiousReferences = [
+  { tradition: 'Christianity', reference: 'Gregorian Chants', frequency: '528Hz', description: 'Said to be used in early Christian music for spiritual connection' },
+  { tradition: 'Hinduism', reference: 'Om Chanting', frequency: '432Hz', description: 'The sacred syllable "Om" vibrates at approximately this frequency' },
+  { tradition: 'Buddhism', reference: 'Tibetan Bowls', frequency: '396Hz, 639Hz', description: 'Used in meditation practices to clear energy blockages' },
+  { tradition: 'Judaism', reference: 'Shofar Horn', frequency: '~528Hz', description: 'The ancient horn produces tones near healing frequencies' },
+  { tradition: 'Islam', reference: 'Adhan (Call to Prayer)', frequency: '~741Hz', description: 'Certain calls contain harmonic frequencies associated with awakening' },
+  { tradition: 'Native American', reference: 'Shamanic Drums', frequency: '4-7Hz', description: 'Theta wave drumming induces trance states for healing' },
+  { tradition: 'Ancient Egypt', reference: 'Isis Temple', frequency: '432Hz', description: 'Chambers designed with mathematical ratios supporting this resonance' },
+  { tradition: 'Vedic Tradition', reference: 'Sanskrit Mantras', frequency: '432Hz cycle', description: 'Ancient chants often based on natural frequency cycles' }
+];
+
 // Content for the history tab
 const frequencyHistory = `
 The concept of special or "angelic" frequencies has a rich history dating back thousands of years:
@@ -38,6 +50,16 @@ The concept of special or "angelic" frequencies has a rich history dating back t
 - Modern music industry primarily uses 440Hz standard tuning, though some artists choose 432Hz
 `;
 
+// Intertextual and literary references
+const literaryReferences = [
+  { source: "Bible - Book of Joshua", reference: "Walls of Jericho fell to trumpet sounds", frequency: "Unknown resonant frequency", notes: "Sound waves causing physical destruction" },
+  { source: "Greek Mythology", reference: "Orpheus' Lyre", frequency: "432Hz correspondence", notes: "Music so perfect it affected the physical world" },
+  { source: "Shakespeare - The Tempest", reference: "The isle is full of noises, sounds, and sweet airs", frequency: "Ethereal frequencies", notes: "Divine musical harmony causing transformation" },
+  { source: "Vedic Texts", reference: "OM - The primordial sound", frequency: "432Hz", notes: "The first vibration from which universe manifested" },
+  { source: "Norse Mythology", reference: "Heimdall's Gjallarhorn", frequency: "Cosmic resonance", notes: "Horn that signals Ragnarök with specific vibration" },
+  { source: "Chinese Literature", reference: "The Yellow Bell", frequency: "Cosmic tone of 432Hz", notes: "Perfect pitch from which all music derives" }
+];
+
 export function FrequencyHistory() {
   const [activeTab, setActiveTab] = useState('history');
   
@@ -46,10 +68,12 @@ export function FrequencyHistory() {
       <h3 className="text-green-400 font-medium mb-3">Music Frequency History & References</h3>
       
       <Tabs defaultValue="history" onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 mb-4">
-          <TabsTrigger value="history">Frequency History</TabsTrigger>
-          <TabsTrigger value="rock">Rock Music References</TabsTrigger>
-          <TabsTrigger value="projects">Sound Healing Projects</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsTrigger value="history">History</TabsTrigger>
+          <TabsTrigger value="religious">Religious</TabsTrigger>
+          <TabsTrigger value="literary">Literary</TabsTrigger>
+          <TabsTrigger value="rock">Rock Music</TabsTrigger>
+          <TabsTrigger value="projects">Healing Projects</TabsTrigger>
         </TabsList>
         
         <TabsContent value="history" className="space-y-4">
@@ -86,6 +110,70 @@ export function FrequencyHistory() {
             </div>
             <p className="mt-3 text-xs text-gray-400">
               Note: Some frequency claims are debated among musicologists and sound engineers.
+            </p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="religious">
+          <div className="text-sm text-gray-300">
+            <p className="mb-3">Various religious and spiritual traditions have incorporated specific frequencies:</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-2 px-2 text-green-400">Tradition</th>
+                    <th className="text-left py-2 px-2 text-green-400">Practice/Reference</th>
+                    <th className="text-left py-2 px-2 text-green-400">Frequency</th>
+                    <th className="text-left py-2 px-2 text-green-400">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {religiousReferences.map((ref, index) => (
+                    <tr key={index} className="border-b border-gray-700">
+                      <td className="py-2 px-2 font-medium">{ref.tradition}</td>
+                      <td className="py-2 px-2 italic">{ref.reference}</td>
+                      <td className="py-2 px-2">{ref.frequency}</td>
+                      <td className="py-2 px-2 text-gray-400">{ref.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              Note: These associations between spiritual practices and specific frequencies are often based on modern interpretations and explorations.
+            </p>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="literary">
+          <div className="text-sm text-gray-300">
+            <p className="mb-3">References to the power of sound frequencies in mythology and literature:</p>
+            
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-600">
+                    <th className="text-left py-2 px-2 text-green-400">Source</th>
+                    <th className="text-left py-2 px-2 text-green-400">Reference</th>
+                    <th className="text-left py-2 px-2 text-green-400">Frequency</th>
+                    <th className="text-left py-2 px-2 text-green-400">Notes</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {literaryReferences.map((ref, index) => (
+                    <tr key={index} className="border-b border-gray-700">
+                      <td className="py-2 px-2 font-medium">{ref.source}</td>
+                      <td className="py-2 px-2 italic">{ref.reference}</td>
+                      <td className="py-2 px-2">{ref.frequency}</td>
+                      <td className="py-2 px-2 text-gray-400">{ref.notes}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <p className="mt-3 text-xs text-gray-400">
+              These literary and mythological references demonstrate humanity's long-standing belief in the transformative power of sound.
             </p>
           </div>
         </TabsContent>

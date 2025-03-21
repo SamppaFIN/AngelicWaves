@@ -17,6 +17,7 @@ import { playActivationSound, playDeactivationSound } from "@/lib/soundEffects";
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [isPlayingSound, setIsPlayingSound] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
   const [settings, setSettings] = useState<FrequencySettings>({
     minFrequency: 432,
     maxFrequency: 963,
@@ -147,12 +148,19 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex items-center mt-1">
+            <div className="flex items-center mt-1 space-x-4">
               <button
                 onClick={toggleCalculationMethod}
                 className="text-xs underline text-gray-400 hover:text-gray-300"
               >
                 {showCalculationMethod ? 'Hide Calculation Method' : 'Show Calculation Method'}
+              </button>
+              
+              <button
+                onClick={() => setShowHistory(prev => !prev)}
+                className="text-xs underline text-purple-400 hover:text-purple-300"
+              >
+                {showHistory ? 'Hide History & References' : 'Show History & References'}
               </button>
             </div>
           </div>
@@ -204,7 +212,7 @@ export default function Home() {
         
         <AngelicFrequencies />
         
-        <FrequencyHistory />
+        {showHistory && <FrequencyHistory />}
       </main>
 
       <AnalysisPanel
