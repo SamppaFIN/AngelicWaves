@@ -11,6 +11,7 @@ import { Switch } from "@/components/ui/switch";
 import { FrequencySettings, AnalysisReportData } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
+import { playActivationSound, playDeactivationSound } from "@/lib/soundEffects";
 
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -45,6 +46,12 @@ export default function Home() {
     if (!isActive && !microphoneAccess) {
       setShowPermissionModal(true);
     } else {
+      // Play the appropriate sound effect based on the new state
+      if (isActive) {
+        playDeactivationSound();
+      } else {
+        playActivationSound();
+      }
       toggleDetector();
     }
   }, [isActive, microphoneAccess, toggleDetector]);
@@ -54,6 +61,7 @@ export default function Home() {
     setShowPermissionModal(false);
     
     if (success) {
+      playActivationSound();
       toggleDetector();
     } else {
       toast({
@@ -187,6 +195,11 @@ export default function Home() {
           settings={settings}
           onSettingsChange={handleSettingsChange}
         />
+
+        <FrequencyPlayer
+          onFrequencyPlay={handleFrequencyPlay}
+          onPlayingStateChange={handlePlayingStateChange}
+        />
         
         <AngelicFrequencies />
       </main>
@@ -208,6 +221,7 @@ export default function Home() {
         hasAngelicFrequency={hasAngelicFrequency}
         currentFrequency={currentFrequency}
         isDemoMode={isDemoMode}
+        isPlayingSound={isPlayingSound}
       />
     </div>
   );
