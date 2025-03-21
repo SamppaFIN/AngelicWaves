@@ -15,6 +15,10 @@ interface AudioAnalyzerResult {
   requestMicrophoneAccess: () => Promise<boolean>;
   isSimulationMode: boolean;
   toggleSimulationMode: () => void;
+  isDemoMode: boolean;
+  toggleDemoMode: () => void;
+  showCalculationMethod: boolean;
+  toggleCalculationMethod: () => void;
 }
 
 export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResult {
@@ -25,6 +29,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const [hasAngelicFrequency, setHasAngelicFrequency] = useState(false);
   const [detectedFrequencies, setDetectedFrequencies] = useState<DetectedFrequency[]>([]);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
+  const [isDemoMode, setIsDemoMode] = useState(false);
+  const [showCalculationMethod, setShowCalculationMethod] = useState(false);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
