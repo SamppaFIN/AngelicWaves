@@ -4,15 +4,21 @@ import { Button } from '@/components/ui/button';
 
 interface FrequencyPlayerProps {
   onFrequencyPlay: (frequency: number) => void;
+  onPlayingStateChange: (isPlaying: boolean) => void;
 }
 
-export function FrequencyPlayer({ onFrequencyPlay }: FrequencyPlayerProps) {
+export function FrequencyPlayer({ onFrequencyPlay, onPlayingStateChange }: FrequencyPlayerProps) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentFrequency, setCurrentFrequency] = useState<number | null>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
   const oscillatorRef = useRef<OscillatorNode | null>(null);
   const gainNodeRef = useRef<GainNode | null>(null);
 
+  // Notify parent component when playing state changes
+  useEffect(() => {
+    onPlayingStateChange(isPlaying);
+  }, [isPlaying, onPlayingStateChange]);
+  
   useEffect(() => {
     // Cleanup on unmount
     return () => {

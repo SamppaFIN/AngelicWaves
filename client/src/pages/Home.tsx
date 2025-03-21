@@ -5,6 +5,7 @@ import { AngelicFrequencies } from "@/components/AngelicFrequencies";
 import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { MicrophonePermission } from "@/components/MicrophonePermission";
 import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
+import { FrequencyPlayer } from "@/components/FrequencyPlayer";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { Switch } from "@/components/ui/switch";
 import { FrequencySettings, AnalysisReportData } from "@/lib/types";
@@ -13,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
+  const [isPlayingSound, setIsPlayingSound] = useState(false);
   const [settings, setSettings] = useState<FrequencySettings>({
     minFrequency: 432,
     maxFrequency: 963,
@@ -74,6 +76,15 @@ export default function Home() {
     await apiRequest("POST", "/api/frequency-reports", report);
     resetDetectedFrequencies();
   };
+  
+  const handleFrequencyPlay = useCallback((frequency: number) => {
+    // This function is called when a frequency is played
+    console.log(`Playing frequency: ${frequency}Hz`);
+  }, []);
+  
+  const handlePlayingStateChange = useCallback((isPlaying: boolean) => {
+    setIsPlayingSound(isPlaying);
+  }, []);
 
   return (
     <div className="font-sans bg-gray-900 text-white min-h-screen pb-32">
