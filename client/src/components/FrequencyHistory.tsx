@@ -104,13 +104,13 @@ export function FrequencyHistory() {
       <h3 className="text-green-400 font-medium mb-3">Music Frequency History & References</h3>
       
       <Tabs defaultValue="history" onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6 mb-4">
+        <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-4">
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="religious">Religious</TabsTrigger>
           <TabsTrigger value="literary">Literary</TabsTrigger>
-          <TabsTrigger value="acoustic">Acoustic Therapy</TabsTrigger>
-          <TabsTrigger value="rock">Rock Music</TabsTrigger>
-          <TabsTrigger value="projects">Healing Projects</TabsTrigger>
+          <TabsTrigger value="acoustic">Therapy</TabsTrigger>
+          <TabsTrigger value="rock">Rock</TabsTrigger>
+          <TabsTrigger value="projects">Projects</TabsTrigger>
         </TabsList>
         
         <TabsContent value="history" className="space-y-4">
@@ -257,10 +257,10 @@ export function FrequencyHistory() {
                   <p className="text-gray-300 text-sm mt-1">
                     Listen to each frequency for 20-30 seconds while focusing on the specific body area you wish to address.
                   </p>
-                  <div className="mt-3 flex justify-end">
+                  <div className="mt-3 flex flex-col sm:flex-row justify-end">
                     <Button 
                       variant="default" 
-                      className="bg-green-600 hover:bg-green-700 text-white"
+                      className="bg-green-600 hover:bg-green-700 text-white text-sm sm:text-base"
                       onClick={() => {
                         // Play each frequency in sequence with short delays between
                         acousticTherapyInfo.frequencies.forEach((freq, index) => {
@@ -271,7 +271,7 @@ export function FrequencyHistory() {
                       }}
                     >
                       <PlayCircle size={16} className="mr-2" />
-                      Play All Therapeutic Frequencies
+                      Play All Frequencies
                     </Button>
                   </div>
                 </div>
