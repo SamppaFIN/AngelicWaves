@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Home from "@/pages/Home";
 import NotFound from "@/pages/not-found";
 import { useState } from "react";
+import { TestStatus } from "@/components/TestStatus";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router />
       <Toaster />
+      <TestStatus />
     </QueryClientProvider>
   );
 }
