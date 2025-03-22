@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PlayCircle } from 'lucide-react';
+import { playBeep } from '../lib/soundEffects';
 
 // Rock music references and their frequencies
 const rockReferences = [
@@ -60,18 +62,53 @@ const literaryReferences = [
   { source: "Chinese Literature", reference: "The Yellow Bell", frequency: "Cosmic tone of 432Hz", notes: "Perfect pitch from which all music derives" }
 ];
 
+// Physical Acoustic Therapy information (Fysioakustinen hoito)
+// Based on information from https://www.terapiapalvelutuuli.com/fysioakustinen-hoito
+const acousticTherapyInfo = {
+  title: "Fysioakustinen hoito (Physical Acoustic Therapy)",
+  description: `
+    Physical Acoustic Therapy (FAT) is a Finnish innovation developed by researchers in the 1980s.
+    It uses precisely calibrated sound vibrations to positively affect the body's cells and functions.
+    The therapy utilizes a special chair or bed that transmits low-frequency sound waves (27-113 Hz)
+    directly to the body's tissues, muscles and circulatory system.
+  `,
+  benefits: [
+    "Relieves muscle tension and pain",
+    "Improves circulation and metabolism",
+    "Accelerates recovery from physical exertion",
+    "Reduces stress and anxiety",
+    "Improves sleep quality",
+    "Supports physical and mental rehabilitation"
+  ],
+  frequencies: [
+    { hz: 27, purpose: "Deep relaxation, stress reduction" },
+    { hz: 40, purpose: "Pain relief, tissue relaxation" },
+    { hz: 52, purpose: "Muscle recovery, improved circulation" },
+    { hz: 68, purpose: "Metabolism stimulation" },
+    { hz: 86, purpose: "Circulation enhancement" },
+    { hz: 98, purpose: "Tissue oxygenation" },
+    { hz: 113, purpose: "Energy and vitality" }
+  ]
+};
+
 export function FrequencyHistory() {
   const [activeTab, setActiveTab] = useState('history');
+  
+  // Function to play a specific frequency
+  const playFrequency = (frequency: number) => {
+    playBeep(frequency, 1.5, 0.5);
+  };
   
   return (
     <div className="bg-gray-800/70 p-4 rounded-lg mb-6">
       <h3 className="text-green-400 font-medium mb-3">Music Frequency History & References</h3>
       
       <Tabs defaultValue="history" onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5 mb-4">
+        <TabsList className="grid w-full grid-cols-6 mb-4">
           <TabsTrigger value="history">History</TabsTrigger>
           <TabsTrigger value="religious">Religious</TabsTrigger>
           <TabsTrigger value="literary">Literary</TabsTrigger>
+          <TabsTrigger value="acoustic">Acoustic Therapy</TabsTrigger>
           <TabsTrigger value="rock">Rock Music</TabsTrigger>
           <TabsTrigger value="projects">Healing Projects</TabsTrigger>
         </TabsList>
@@ -175,6 +212,76 @@ export function FrequencyHistory() {
             <p className="mt-3 text-xs text-gray-400">
               These literary and mythological references demonstrate humanity's long-standing belief in the transformative power of sound.
             </p>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="acoustic">
+          <div className="text-sm text-gray-300">
+            <div className="mb-4">
+              <h4 className="text-green-400 font-medium text-lg">{acousticTherapyInfo.title}</h4>
+              <p className="mt-1 whitespace-pre-line">{acousticTherapyInfo.description}</p>
+              
+              <div className="mt-4">
+                <h5 className="text-green-300 font-medium">Benefits:</h5>
+                <ul className="list-disc pl-5 mt-2 space-y-1">
+                  {acousticTherapyInfo.benefits.map((benefit, index) => (
+                    <li key={index}>{benefit}</li>
+                  ))}
+                </ul>
+              </div>
+              
+              <div className="mt-6">
+                <h5 className="text-green-300 font-medium">Therapeutic Frequencies:</h5>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-3">
+                  {acousticTherapyInfo.frequencies.map((item, index) => (
+                    <div key={index} className="border border-gray-700 bg-gray-800 rounded-md p-3 flex items-center justify-between">
+                      <div>
+                        <div className="text-purple-300 font-medium">{item.hz} Hz</div>
+                        <div className="text-gray-400 text-sm mt-1">{item.purpose}</div>
+                      </div>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="ml-2 text-green-400 border-green-400 hover:bg-green-400/10"
+                        onClick={() => playFrequency(item.hz)}
+                      >
+                        <PlayCircle size={16} className="mr-1" />
+                        Play
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="mt-4 bg-green-900/30 border border-green-800/50 rounded-md p-3">
+                  <h5 className="text-green-300 font-medium">Experience All Therapeutic Frequencies</h5>
+                  <p className="text-gray-300 text-sm mt-1">
+                    Listen to each frequency for 20-30 seconds while focusing on the specific body area you wish to address.
+                  </p>
+                  <div className="mt-3 flex justify-end">
+                    <Button 
+                      variant="default" 
+                      className="bg-green-600 hover:bg-green-700 text-white"
+                      onClick={() => {
+                        // Play each frequency in sequence with short delays between
+                        acousticTherapyInfo.frequencies.forEach((freq, index) => {
+                          setTimeout(() => {
+                            playFrequency(freq.hz);
+                          }, index * 2000); // 2 second delay between each frequency
+                        });
+                      }}
+                    >
+                      <PlayCircle size={16} className="mr-2" />
+                      Play All Therapeutic Frequencies
+                    </Button>
+                  </div>
+                </div>
+                
+                <div className="mt-6 text-xs text-gray-400">
+                  <p>Source: <a href="https://www.terapiapalvelutuuli.com/fysioakustinen-hoito" target="_blank" rel="noopener noreferrer" className="text-green-400 hover:underline">Terapiapalvelutuuli.com - Fysioakustinen hoito</a></p>
+                  <p className="mt-1">Note: This is a simplified simulation. Actual Physical Acoustic Therapy (FAT) requires specialized equipment and professional guidance.</p>
+                </div>
+              </div>
+            </div>
           </div>
         </TabsContent>
         
