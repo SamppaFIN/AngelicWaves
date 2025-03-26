@@ -417,12 +417,13 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     setIsDemoMode(prev => {
       const newDemoValue = !prev;
       
-      // If turning on demo mode, automatically set to a specific angelic frequency
+      // If turning on demo mode, automatically set to the current demoFrequency
       if (newDemoValue && isActive) {
-        // Choose a specific angelic frequency to display - e.g., 432 Hz
-        setCurrentFrequency(432);
-        setHasAngelicFrequency(true);
-        setDetectionStatus("Demo Mode: Showing Angelic Frequency (432 Hz)");
+        setCurrentFrequency(demoFrequency);
+        // Check if this frequency is considered "angelic"
+        const isAngelic = isAngelicFrequency(demoFrequency);
+        setHasAngelicFrequency(isAngelic);
+        setDetectionStatus(`Demo Mode: Set to ${demoFrequency} Hz${isAngelic ? ' (Angelic Frequency)' : ''}`);
       } else if (isActive) {
         // If turning off, go back to normal detection or simulation
         if (isSimulationMode) {
@@ -442,7 +443,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       return newDemoValue;
     });
-  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency]);
+  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, demoFrequency]);
   
   // Toggle showing calculation method
   const toggleCalculationMethod = useCallback(() => {
