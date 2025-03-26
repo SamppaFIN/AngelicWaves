@@ -19,6 +19,8 @@ interface AudioAnalyzerResult {
   toggleDemoMode: () => void;
   showCalculationMethod: boolean;
   toggleCalculationMethod: () => void;
+  demoFrequency: number;
+  setDemoFrequency: (frequency: number) => void;
 }
 
 export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResult {
@@ -30,6 +32,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const [detectedFrequencies, setDetectedFrequencies] = useState<DetectedFrequency[]>([]);
   const [isSimulationMode, setIsSimulationMode] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  const [demoFrequency, setDemoFrequency] = useState(432); // Default demo frequency is 432 Hz
   const [showCalculationMethod, setShowCalculationMethod] = useState(false);
   
   const audioContextRef = useRef<AudioContext | null>(null);
@@ -461,6 +464,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     isDemoMode,
     toggleDemoMode,
     showCalculationMethod,
-    toggleCalculationMethod
+    toggleCalculationMethod,
+    demoFrequency,
+    setDemoFrequency
   };
 }
