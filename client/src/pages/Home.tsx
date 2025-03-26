@@ -7,7 +7,10 @@ import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { MicrophonePermission } from "@/components/MicrophonePermission";
 import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
 import { FrequencyPlayer } from "@/components/FrequencyPlayer";
+import { FrequencyMeterPanel } from "@/components/FrequencyMeterPanel";
+import { DemoFrequencySlider } from "@/components/DemoFrequencySlider";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
+import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { Switch } from "@/components/ui/switch";
 import { FrequencySettings, AnalysisReportData } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
@@ -41,7 +44,9 @@ export default function Home() {
     isDemoMode,
     toggleDemoMode,
     showCalculationMethod,
-    toggleCalculationMethod
+    toggleCalculationMethod,
+    demoFrequency,
+    setDemoFrequency
   } = useAudioAnalyzer(settings);
 
   const handleToggleClick = useCallback(() => {
@@ -168,14 +173,24 @@ export default function Home() {
       </header>
 
       <main className="container mx-auto px-4 pt-20">
-        <FrequencyVisualizer
-          isActive={isActive}
-          currentFrequency={currentFrequency}
-          detectionStatus={detectionStatus}
-          hasAngelicFrequency={hasAngelicFrequency}
-          minFrequency={settings.minFrequency}
-          maxFrequency={settings.maxFrequency}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="md:col-span-2">
+            <FrequencyVisualizer
+              isActive={isActive}
+              currentFrequency={currentFrequency}
+              detectionStatus={detectionStatus}
+              hasAngelicFrequency={hasAngelicFrequency}
+              minFrequency={settings.minFrequency}
+              maxFrequency={settings.maxFrequency}
+            />
+          </div>
+          <div>
+            <FrequencyMeterPanel
+              currentFrequency={currentFrequency}
+              isActive={isActive}
+            />
+          </div>
+        </div>
         
         {showCalculationMethod && (
           <div className="bg-gray-800/70 p-4 rounded-lg mb-6 text-sm">
@@ -194,16 +209,29 @@ export default function Home() {
                 <p className="text-amber-400 mt-2">Note: In simulation mode, frequencies are generated algorithmically rather than detected from audio input.</p>
               )}
               {isDemoMode && (
-                <p className="text-purple-400 mt-2">Note: Demo mode is currently active, showing a specific angelic frequency (432Hz).</p>
+                <p className="text-purple-400 mt-2">
+                  Note: Demo mode is currently active, showing frequency at {demoFrequency}Hz
+                  {isAngelicFrequency(demoFrequency) && " (Angelic Frequency)"}.
+                </p>
               )}
             </div>
           </div>
         )}
         
-        <FrequencyThresholds
-          settings={settings}
-          onSettingsChange={handleSettingsChange}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+          <FrequencyThresholds
+            settings={settings}
+            onSettingsChange={handleSettingsChange}
+          />
+          
+          <DemoFrequencySlider
+            minFrequency={settings.minFrequency}
+            maxFrequency={settings.maxFrequency}
+            demoFrequency={demoFrequency}
+            onDemoFrequencyChange={setDemoFrequency}
+            isDemoMode={isDemoMode}
+          />
+        </div>
 
         <FrequencyPlayer
           onFrequencyPlay={handleFrequencyPlay}
