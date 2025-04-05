@@ -9,6 +9,7 @@ import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
 import { FrequencyPlayer } from "@/components/FrequencyPlayer";
 import { FrequencyMeterPanel } from "@/components/FrequencyMeterPanel";
 import { DemoFrequencySlider } from "@/components/DemoFrequencySlider";
+import { AngelicFrequencyPresentation } from "@/components/AngelicFrequencyPresentation";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { Switch } from "@/components/ui/switch";
@@ -236,6 +237,12 @@ export default function Home() {
         <FrequencyPlayer
           onFrequencyPlay={handleFrequencyPlay}
           onPlayingStateChange={handlePlayingStateChange}
+        />
+        
+        <AngelicFrequencyPresentation
+          currentFrequency={currentFrequency}
+          isActive={isActive}
+          detectedFrequencies={detectedFrequencies}
         />
         
         <AngelicFrequencies />
