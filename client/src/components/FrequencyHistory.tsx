@@ -22,7 +22,12 @@ const soundHealingProjects = [
   { name: 'Sound Healing Institute', frequencies: '432Hz, 528Hz', description: 'Studies on cymatics and vibrational medicine' },
   { name: 'Schumann Resonance Music', frequencies: '7.83Hz and harmonics', description: 'Earth\'s natural electromagnetic field frequency in music' },
   { name: 'Tibetan Singing Bowl Therapy', frequencies: '432Hz, 528Hz, 639Hz', description: 'Ancient sound therapy techniques with specific metal bowls' },
-  { name: 'Binaural Beats Research', frequencies: 'Delta, Theta, Alpha, Beta, Gamma waves', description: 'Brain entrainment frequencies for meditation and focus' }
+  { name: 'Binaural Beats Research', frequencies: 'Delta, Theta, Alpha, Beta, Gamma waves', description: 'Brain entrainment frequencies for meditation and focus' },
+  { name: 'Finnish Fysioakustinen Tutkimus', frequencies: '27-113Hz', description: 'Research on vibroacoustic therapy developed in Finland' },
+  { name: 'Cymatic Therapy Foundation', frequencies: 'Tissue-specific resonant frequencies', description: 'Research on frequencies that cause different tissues to vibrate' },
+  { name: 'NASA Sound Healing Research', frequencies: '528Hz', description: 'Studies on frequency effects on DNA repair and cell growth' },
+  { name: 'Royal Academy of Music Resonance Project', frequencies: '432Hz vs 440Hz', description: 'Comparative research on standard vs alternative tuning' },
+  { name: 'HeartMath Institute', frequencies: 'Heart coherence frequencies', description: 'Research on frequencies that synchronize heart and brain activity' }
 ];
 
 // Religious/spiritual references to frequencies
@@ -34,22 +39,31 @@ const religiousReferences = [
   { tradition: 'Islam', reference: 'Adhan (Call to Prayer)', frequency: '~741Hz', description: 'Certain calls contain harmonic frequencies associated with awakening' },
   { tradition: 'Native American', reference: 'Shamanic Drums', frequency: '4-7Hz', description: 'Theta wave drumming induces trance states for healing' },
   { tradition: 'Ancient Egypt', reference: 'Isis Temple', frequency: '432Hz', description: 'Chambers designed with mathematical ratios supporting this resonance' },
-  { tradition: 'Vedic Tradition', reference: 'Sanskrit Mantras', frequency: '432Hz cycle', description: 'Ancient chants often based on natural frequency cycles' }
+  { tradition: 'Vedic Tradition', reference: 'Sanskrit Mantras', frequency: '432Hz cycle', description: 'Ancient chants often based on natural frequency cycles' },
+  { tradition: 'Finnish Shamanism', reference: 'Jouhikko Playing', frequency: 'Natural harmonics', description: 'Ancient Finnish bowed lyre instrument used in spiritual rituals' },
+  { tradition: 'Celtic Traditions', reference: 'Bardic Harps', frequency: '432Hz variants', description: 'Instruments tuned to natural harmonics to connect with nature spirits' },
+  { tradition: 'Sufi Mysticism', reference: 'Whirling Dervish', frequency: '528Hz resonance', description: 'Spinning meditation practice creating frequency alignment' },
+  { tradition: 'Taoist Practices', reference: 'Qigong Toning', frequency: 'Five Element frequencies', description: 'Specific tones assigned to organ systems for healing' },
+  { tradition: 'Siberian Shamanism', reference: 'Jaw Harp', frequency: 'Overtone series', description: 'Instrument creating harmonic series to communicate with spirits' }
 ];
 
 // Content for the history tab
 const frequencyHistory = `
 The concept of special or "angelic" frequencies has a rich history dating back thousands of years:
 
-- Ancient Sumerians used a 6-tone scale based on 432Hz
-- Pythagoras (570-495 BCE) identified mathematical ratios in music as healing
-- Ancient Egyptian instruments were tuned to 432Hz according to some researchers
-- Gregorian chants often utilized frequencies in the 396-963Hz range
-- In 1939, Nazi propaganda minister Joseph Goebbels standardized A=440Hz tuning (replacing A=432Hz)
-- John Lennon and other artists experimented with alternative tunings in the 1960s-70s
-- The modern sound healing movement emerged in the 1970s with frequencies like 528Hz (the "love frequency")
-- Dr. Leonard Horowitz popularized the "Solfeggio frequencies" in the 1990s
-- Modern music industry primarily uses 440Hz standard tuning, though some artists choose 432Hz
+- Ancient Sumerians used a 6-tone scale based on 432Hz and believed certain tones could contact divine forces
+- Pythagoras (570-495 BCE) identified mathematical ratios in music as healing and created the "music of the spheres" theory
+- Ancient Egyptian instruments were tuned to 432Hz according to some researchers, possibly used in ceremonial healing
+- The "Schumann Resonance" (7.83Hz) is Earth's natural electromagnetic frequency, discovered in 1952
+- Gregorian chants often utilized frequencies in the 396-963Hz range for heightened spiritual communion
+- In 1939, Nazi propaganda minister Joseph Goebbels standardized A=440Hz tuning (replacing A=432Hz), with some theorists claiming it was to create societal tension
+- Nikola Tesla emphasized 3-6-9 as key vibrational numbers, stated "If you only knew the magnificence of the 3, 6 and 9, then you would have a key to the universe"
+- John Lennon and other artists experimented with alternative tunings in the 1960s-70s to induce specific emotional states
+- The modern sound healing movement emerged in the 1970s with frequencies like 528Hz (the "love frequency") and 639Hz (connection)
+- Dr. Leonard Horowitz popularized the "Solfeggio frequencies" in the 1990s, claiming they were ancient healing tones
+- Research at Karolinska Institutet (Sweden) showed specific frequencies can affect cellular regeneration and nervous system function
+- Modern music industry primarily uses 440Hz standard tuning, though some artists choose 432Hz for perceived harmonic quality
+- The 2019 Nobel Prize in Physiology recognized how cells sense oxygen via specific frequency vibrations
 `;
 
 // Intertextual and literary references
@@ -59,7 +73,12 @@ const literaryReferences = [
   { source: "Shakespeare - The Tempest", reference: "The isle is full of noises, sounds, and sweet airs", frequency: "Ethereal frequencies", notes: "Divine musical harmony causing transformation" },
   { source: "Vedic Texts", reference: "OM - The primordial sound", frequency: "432Hz", notes: "The first vibration from which universe manifested" },
   { source: "Norse Mythology", reference: "Heimdall's Gjallarhorn", frequency: "Cosmic resonance", notes: "Horn that signals Ragnarök with specific vibration" },
-  { source: "Chinese Literature", reference: "The Yellow Bell", frequency: "Cosmic tone of 432Hz", notes: "Perfect pitch from which all music derives" }
+  { source: "Chinese Literature", reference: "The Yellow Bell", frequency: "Cosmic tone of 432Hz", notes: "Perfect pitch from which all music derives" },
+  { source: "Finnegans Wake - James Joyce", reference: "The fall of language", frequency: "Vibrational language", notes: "Words as frequency vibrations creating reality" },
+  { source: "Kalevala - Finnish Epic", reference: "Väinämöinen's Kantele", frequency: "Natural harmonics", notes: "Instrument created from pike jawbone that controls natural elements" },
+  { source: "Hans Christian Andersen", reference: "The Bell", frequency: "Divine frequency", notes: "Mysterious bell sound in the forest representing spiritual enlightenment" },
+  { source: "Dante's Divine Comedy", reference: "Music of the Spheres", frequency: "Planetary vibrations", notes: "Each celestial sphere produces unique vibrational tone" },
+  { source: "Ancient Karelian Runes", reference: "Singing competitions", frequency: "Voice frequencies", notes: "Magic through precise vibrational sounds in song duels" }
 ];
 
 // Physical Acoustic Therapy information (Fysioakustinen hoito)
