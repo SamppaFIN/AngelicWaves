@@ -3,6 +3,13 @@ import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { DetectedFrequency } from "@shared/schema";
 import { FrequencySettings } from "@/lib/types";
 
+// Define dominant frequency info for AI analysis
+export interface DominantFrequency {
+  frequency: number;
+  amplitude: number;
+  percentage: number; // How dominant it is in the spectrum (0-100)
+}
+
 interface AudioAnalyzerResult {
   isActive: boolean;
   currentFrequency: number;
@@ -21,6 +28,9 @@ interface AudioAnalyzerResult {
   toggleCalculationMethod: () => void;
   demoFrequency: number;
   setDemoFrequency: (frequency: number) => void;
+  // Add frequency spectrum analysis 
+  frequencySpectrum: Uint8Array | null;
+  dominantFrequencies: DominantFrequency[];
 }
 
 export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResult {
@@ -34,6 +44,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [demoFrequency, setDemoFrequency] = useState(432); // Default demo frequency is 432 Hz
   const [showCalculationMethod, setShowCalculationMethod] = useState(false);
+  // New state for frequency spectrum analysis
+  const [frequencySpectrum, setFrequencySpectrum] = useState<Uint8Array | null>(null);
+  const [dominantFrequencies, setDominantFrequencies] = useState<DominantFrequency[]>([]);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
@@ -113,6 +126,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     const dataArray = new Uint8Array(bufferLength);
     analyzer.getByteFrequencyData(dataArray);
     
+    // Store the frequency spectrum data for visualization
+    setFrequencySpectrum(new Uint8Array(dataArray));
+    
     // Find dominant frequency
     let maxValue = 0;
     let maxIndex = 0;
@@ -128,6 +144,55 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     const audioContext = audioContextRef.current!;
     const nyquist = audioContext.sampleRate / 2;
     let frequency = Math.round((maxIndex * nyquist) / bufferLength);
+    
+    // Find the top 5 dominant frequencies in the spectrum
+    const frequencyPeaks: {index: number, amplitude: number}[] = [];
+    const minPeakDistance = Math.floor(bufferLength / 100); // Ensure peaks are sufficiently separated
+    
+    // First pass to find local peaks
+    for (let i = 5; i < bufferLength - 5; i++) {
+      const currentAmplitude = dataArray[i];
+      
+      // Check if this is a local maximum (higher than neighboring frequencies)
+      if (currentAmplitude > 30 && // Only consider frequencies with sufficient amplitude
+          currentAmplitude > dataArray[i - 1] && 
+          currentAmplitude > dataArray[i - 2] &&
+          currentAmplitude > dataArray[i + 1] && 
+          currentAmplitude > dataArray[i + 2]) {
+        
+        // Check if it's far enough from other detected peaks
+        const isFarEnough = frequencyPeaks.every(peak => 
+          Math.abs(peak.index - i) > minPeakDistance
+        );
+        
+        if (isFarEnough) {
+          frequencyPeaks.push({ index: i, amplitude: currentAmplitude });
+        }
+      }
+    }
+    
+    // Sort peaks by amplitude (highest first) and take top 5
+    const topPeaks = frequencyPeaks
+      .sort((a, b) => b.amplitude - a.amplitude)
+      .slice(0, 5);
+    
+    // Calculate total amplitude of all top peaks for percentage calculations
+    const totalAmplitude = topPeaks.reduce((sum, peak) => sum + peak.amplitude, 0);
+    
+    // Convert peak indices to frequencies with additional information
+    const dominantFreqs = topPeaks.map(peak => ({
+      frequency: Math.round((peak.index * nyquist) / bufferLength),
+      amplitude: peak.amplitude,
+      percentage: Math.round((peak.amplitude / (totalAmplitude || 1)) * 100)
+    }));
+    
+    // Update state with dominant frequencies that fall within our target range
+    setDominantFrequencies(
+      dominantFreqs.filter(f => 
+        f.frequency >= settings.minFrequency && 
+        f.frequency <= settings.maxFrequency
+      )
+    );
     
     // Only consider frequencies within our range and with sufficient amplitude
     // Using a dynamic threshold based on sensitivity setting
@@ -295,7 +360,20 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     
     // Continue analyzing
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, currentFrequency]);
+  }, [
+    isActive, 
+    isSimulationMode, 
+    settings.minFrequency, 
+    settings.maxFrequency, 
+    settings.sensitivity,
+    currentFrequency,
+    setCurrentFrequency,
+    setDetectionStatus,
+    setHasAngelicFrequency,
+    setDetectedFrequencies,
+    setFrequencySpectrum,
+    setDominantFrequencies
+  ]);
 
   // Toggle detector on/off
   const toggleDetector = useCallback(async () => {
@@ -467,6 +545,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     showCalculationMethod,
     toggleCalculationMethod,
     demoFrequency,
-    setDemoFrequency
+    setDemoFrequency,
+    // Add new properties for frequency spectrum analysis
+    frequencySpectrum,
+    dominantFrequencies
   };
 }
