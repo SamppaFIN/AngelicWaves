@@ -3,6 +3,7 @@ import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { z } from "zod";
 import { insertFrequencyReportSchema, type DetectedFrequency } from "@shared/schema";
+import fetch from 'node-fetch';
 
 function generateAnalysis(detectedFrequencies: DetectedFrequency[]): string {
   // Group frequencies by their value
@@ -106,6 +107,96 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json({ analysis });
     } catch (error) {
       res.status(500).json({ message: "Failed to analyze frequencies" });
+    }
+  });
+
+  // New route for AI-powered frequency analysis using Perplexity API
+  app.post("/api/analyze-frequencies", async (req, res) => {
+    try {
+      const { detectedFrequencies, dominantFrequencies, userNotes } = req.body;
+      
+      if (!detectedFrequencies && !dominantFrequencies) {
+        return res.status(400).json({ message: "No frequency data provided" });
+      }
+      
+      // Check if the PERPLEXITY_API_KEY is available
+      const apiKey = process.env.PERPLEXITY_API_KEY;
+      if (!apiKey) {
+        // Fall back to the built-in analysis method if no API key
+        const fallbackAnalysis = "Our AI analysis service is currently unavailable. Please try again later or ensure the PERPLEXITY_API_KEY environment variable is set.";
+        return res.json({ analysis: fallbackAnalysis });
+      }
+      
+      // Create prompt for the Perplexity API
+      const prompt = `
+      I'm analyzing sound frequencies detected in a real-time audio stream.
+      
+      Here are the detected stable frequencies over time:
+      ${detectedFrequencies || "None detected"}
+      
+      Here are the current dominant frequencies in the spectrum:
+      ${dominantFrequencies || "None detected"}
+      
+      ${userNotes ? `Additional context: ${userNotes}` : ""}
+      
+      Please provide an expert analysis that includes:
+      1. The significance of these frequencies in terms of sound healing and therapeutic applications
+      2. Potential resonance with "angelic frequencies" (432Hz, 528Hz, 639Hz, 741Hz, 963Hz) and their effects
+      3. Possible emotional and physical responses to these frequencies
+      4. Any interesting patterns or relationships between the detected frequencies
+      5. Historical and cultural contexts where these frequencies might have been used
+      
+      Format the response as a well-structured, informative analysis with clear sections.
+      `;
+      
+      // Call the Perplexity API
+      const response = await fetch("https://api.perplexity.ai/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${apiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.1-sonar-small-128k-online",
+          messages: [
+            {
+              role: "system",
+              content: "You are an expert in sound therapy, frequency analysis, and the historical significance of sound healing across various cultures. Provide detailed, scientifically-grounded analysis while acknowledging traditional and spiritual perspectives."
+            },
+            {
+              role: "user",
+              content: prompt
+            }
+          ],
+          temperature: 0.2,
+          max_tokens: 2000,
+          stream: false
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Perplexity API returned ${response.status}: ${await response.text()}`);
+      }
+      
+      const data = await response.json();
+      const analysis = data.choices[0]?.message?.content || "Could not generate analysis.";
+      
+      // Save the report for future reference
+      const report = {
+        detectedFrequencies: [],
+        analysis,
+        userNotes: userNotes || ""
+      };
+      
+      // Return the AI-generated analysis
+      res.json({ analysis });
+    } catch (error) {
+      console.error("Perplexity API error:", error);
+      // Fall back to the built-in analysis method
+      res.status(500).json({ 
+        message: "Failed to analyze frequencies with AI", 
+        error: error instanceof Error ? error.message : String(error)
+      });
     }
   });
 
