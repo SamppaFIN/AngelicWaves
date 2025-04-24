@@ -10,6 +10,7 @@ import { FrequencyPlayer } from "@/components/FrequencyPlayer";
 import { FrequencyMeterPanel } from "@/components/FrequencyMeterPanel";
 import { DemoFrequencySlider } from "@/components/DemoFrequencySlider";
 import { AngelicFrequencyPresentation } from "@/components/AngelicFrequencyPresentation";
+import { AIFrequencyAnalysis } from "@/components/AIFrequencyAnalysis";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { Switch } from "@/components/ui/switch";
@@ -47,7 +48,10 @@ export default function Home() {
     showCalculationMethod,
     toggleCalculationMethod,
     demoFrequency,
-    setDemoFrequency
+    setDemoFrequency,
+    // Add the new frequency spectrum analysis properties
+    frequencySpectrum,
+    dominantFrequencies
   } = useAudioAnalyzer(settings);
 
   const handleToggleClick = useCallback(() => {
@@ -89,9 +93,18 @@ export default function Home() {
   }, []);
 
   const handleSaveReport = async (report: AnalysisReportData) => {
-    await apiRequest("POST", "/api/frequency-reports", report);
+    await apiRequest("/api/frequency-reports", {
+      method: "POST",
+      body: JSON.stringify(report)
+    });
     resetDetectedFrequencies();
   };
+  
+  // Handler for when AI generates insights
+  const [aiInsight, setAiInsight] = useState<string | null>(null);
+  const handleAiInsightGenerated = useCallback((insight: string) => {
+    setAiInsight(insight);
+  }, []);
   
   const handleFrequencyPlay = useCallback((frequency: number) => {
     // This function is called when a frequency is played
@@ -248,6 +261,15 @@ export default function Home() {
         <AngelicFrequencies />
         
         {showHistory && <FrequencyHistory />}
+        
+        <div className="mt-10 mb-6">
+          <h2 className="text-2xl font-bold text-green-400 mb-4">AI-Powered Frequency Analysis</h2>
+          <AIFrequencyAnalysis 
+            detectedFrequencies={detectedFrequencies}
+            dominantFrequencies={dominantFrequencies}
+            onAiInsightGenerated={handleAiInsightGenerated}
+          />
+        </div>
       </main>
 
       <AnalysisPanel

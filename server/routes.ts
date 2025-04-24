@@ -179,7 +179,32 @@ export async function registerRoutes(app: Express): Promise<Server> {
       }
       
       const data = await response.json();
-      const analysis = data.choices[0]?.message?.content || "Could not generate analysis.";
+      
+      // Type guard for the Perplexity API response
+      interface PerplexityResponse {
+        choices: Array<{
+          message: {
+            content: string;
+          };
+        }>;
+      }
+      
+      // Check if the response has the expected structure
+      const isValidResponse = (data: unknown): data is PerplexityResponse => {
+        return (
+          typeof data === 'object' && 
+          data !== null && 
+          'choices' in data && 
+          Array.isArray((data as any).choices) && 
+          (data as any).choices.length > 0 &&
+          typeof (data as any).choices[0]?.message?.content === 'string'
+        );
+      };
+      
+      let analysis = "Could not generate analysis.";
+      if (isValidResponse(data)) {
+        analysis = data.choices[0].message.content;
+      }
       
       // Save the report for future reference
       const report = {
