@@ -69,7 +69,24 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   // Request microphone access
   const requestMicrophoneAccess = useCallback(async (): Promise<boolean> => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      console.log("Requesting microphone access...");
+      
+      // Check if navigator.mediaDevices is available
+      if (!navigator.mediaDevices) {
+        console.error("navigator.mediaDevices is not available in this browser");
+        setMicrophoneAccess(false);
+        return false;
+      }
+      
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        audio: {
+          echoCancellation: true,
+          noiseSuppression: true,
+          autoGainControl: true
+        } 
+      });
+      
+      console.log("Microphone access granted:", stream.getAudioTracks().length, "audio tracks available");
       streamRef.current = stream;
       setMicrophoneAccess(true);
       return true;
@@ -82,23 +99,60 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
 
   // Set up audio analysis
   const setupAudioAnalysis = useCallback(async () => {
+    console.log("Setting up audio analysis...");
+    
+    // Check microphone access
     if (!streamRef.current) {
+      console.log("No audio stream available, requesting microphone access");
       const hasAccess = await requestMicrophoneAccess();
-      if (!hasAccess) return false;
+      if (!hasAccess) {
+        console.error("Failed to get microphone access");
+        return false;
+      }
     }
+    
+    if (!streamRef.current) {
+      console.error("Stream is still not available after requesting access");
+      return false;
+    }
+    
+    // Log audio tracks info to debug
+    const audioTracks = streamRef.current.getAudioTracks();
+    console.log(`Audio tracks available: ${audioTracks.length}`);
+    audioTracks.forEach((track, i) => {
+      console.log(`Track ${i}: enabled=${track.enabled}, muted=${track.muted}, readyState=${track.readyState}`);
+      
+      // Check if track is actually receiving audio
+      if (track.muted) {
+        console.warn("Audio track is muted! Check browser permissions.");
+      }
+      
+      if (!track.enabled) {
+        console.warn("Audio track is disabled! Enabling it...");
+        track.enabled = true;
+      }
+    });
     
     // Create AudioContext and analyzer
     if (!audioContextRef.current) {
-      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      try {
+        console.log("Creating new AudioContext");
+        audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+      } catch (err) {
+        console.error("Failed to create AudioContext:", err);
+        return false;
+      }
     }
     
     const audioContext = audioContextRef.current;
+    console.log("AudioContext state:", audioContext.state);
     
     // Resume the audio context if it's suspended (browsers require user interaction)
     if (audioContext.state === 'suspended') {
       try {
+        console.log("Attempting to resume suspended AudioContext");
         await audioContext.resume();
-        console.log("AudioContext resumed successfully");
+        console.log("AudioContext resumed successfully, new state:", audioContext.state);
       } catch (error) {
         console.error("Failed to resume AudioContext:", error);
         return false;
@@ -106,15 +160,26 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     }
     
     // Create analyzer
-    analyzerRef.current = audioContext.createAnalyser();
-    analyzerRef.current.fftSize = getFftSize();
-    analyzerRef.current.smoothingTimeConstant = 0.8;
-    
-    // Connect audio source to analyzer
-    sourceRef.current = audioContext.createMediaStreamSource(streamRef.current!);
-    sourceRef.current.connect(analyzerRef.current);
-    
-    return true;
+    try {
+      console.log("Creating audio analyzer");
+      analyzerRef.current = audioContext.createAnalyser();
+      const fftSize = getFftSize();
+      console.log(`Setting FFT size to ${fftSize}`);
+      analyzerRef.current.fftSize = fftSize;
+      analyzerRef.current.smoothingTimeConstant = 0.8;
+      
+      // Connect audio source to analyzer
+      console.log("Creating media stream source");
+      sourceRef.current = audioContext.createMediaStreamSource(streamRef.current);
+      console.log("Connecting source to analyzer");
+      sourceRef.current.connect(analyzerRef.current);
+      
+      console.log("Audio analysis setup complete!");
+      return true;
+    } catch (err) {
+      console.error("Error setting up audio analyzer:", err);
+      return false;
+    }
   }, [getFftSize, requestMicrophoneAccess]);
 
   // Analyze audio for frequencies
@@ -125,6 +190,22 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     const bufferLength = analyzer.frequencyBinCount;
     const dataArray = new Uint8Array(bufferLength);
     analyzer.getByteFrequencyData(dataArray);
+    
+    // Debug: Check if we're getting any audio data
+    const hasAudioData = dataArray.some(value => value > 0);
+    if (!isSimulationMode && !hasAudioData) {
+      console.log("No audio data detected. Check microphone connection and volume.");
+    } else if (!isSimulationMode && hasAudioData) {
+      // Only log occasionally to avoid console spam
+      if (Math.random() < 0.01) {
+        // Find max value manually to avoid spread operator on Uint8Array
+        let maxVal = 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          if (dataArray[i] > maxVal) maxVal = dataArray[i];
+        }
+        console.log("Audio data detected! Max amplitude:", maxVal);
+      }
+    }
     
     // Store the frequency spectrum data for visualization
     setFrequencySpectrum(new Uint8Array(dataArray));
