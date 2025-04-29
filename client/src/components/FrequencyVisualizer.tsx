@@ -20,6 +20,19 @@ export function FrequencyVisualizer({
 }: FrequencyVisualizerProps) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [discoLights, setDiscoLights] = useState<{x: number, y: number, size: number, delay: number}[]>([]);
+  const [audioDetected, setAudioDetected] = useState(false);
+  
+  // Set audio detected state when we have a frequency 
+  useEffect(() => {
+    if (currentFrequency > 0) {
+      setAudioDetected(true);
+      // Reset the audio detected indicator after a short delay
+      const timer = setTimeout(() => {
+        setAudioDetected(false);
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [currentFrequency]);
 
   // Generate disco light positions when an angelic frequency is detected
   useEffect(() => {
@@ -135,6 +148,15 @@ export function FrequencyVisualizer({
 
   return (
     <div className="relative w-full aspect-square max-w-2xl mx-auto mb-8">
+      {/* Audio detected indicator - pulses when sound is detected */}
+      {isActive && (
+        <div 
+          className={`absolute inset-0 rounded-full 
+                     ${currentFrequency > 0 ? 'border-4 border-green-500 animate-ping opacity-75' : 
+                       audioDetected ? 'border-2 border-green-400 animate-pulse opacity-50' : 'border border-green-300 opacity-25'}`}
+        />
+      )}
+      
       {/* Disco ball effect overlay when angelic frequency is detected */}
       {hasAngelicFrequency && (
         <>
@@ -168,6 +190,21 @@ export function FrequencyVisualizer({
         <div className={`${hasAngelicFrequency ? 'text-green-200' : 'text-gray-400'}`}>
           {hasAngelicFrequency ? '✨ Angelic Frequency Detected ✨' : detectionStatus}
         </div>
+        
+        {/* Sound level indicator - shows when audio is being detected */}
+        {isActive && !hasAngelicFrequency && currentFrequency > 0 && (
+          <div className="mt-2 flex justify-center items-center">
+            <div className="flex gap-1">
+              <div className="h-2 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
+              <div className="h-3 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '100ms' }}></div>
+              <div className="h-4 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '200ms' }}></div>
+              <div className="h-5 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '300ms' }}></div>
+              <div className="h-4 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '400ms' }}></div>
+              <div className="h-3 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '500ms' }}></div>
+              <div className="h-2 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '600ms' }}></div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
