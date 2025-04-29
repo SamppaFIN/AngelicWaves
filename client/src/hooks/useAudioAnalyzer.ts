@@ -99,6 +99,21 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
 
   // Set up audio analysis
   const setupAudioAnalysis = useCallback(async () => {
+    // Always output detailed debugging information about our audio setup status
+    console.log("=============== AUDIO DETECTOR DEBUG INFO ===============");
+    console.log("Mode:", isSimulationMode ? "SIMULATION" : "MICROPHONE");
+    console.log("Current Sensitivity:", settings.sensitivity);
+    console.log("Target Range:", settings.minFrequency, "Hz -", settings.maxFrequency, "Hz");
+    console.log("AudioContext:", audioContextRef.current ? "INITIALIZED" : "NOT INITIALIZED");
+    console.log("MediaStream:", streamRef.current ? "AVAILABLE" : "NOT AVAILABLE");
+    console.log("Analyzer:", analyzerRef.current ? "INITIALIZED" : "NOT INITIALIZED");
+    console.log("Detector Active:", isActive ? "YES" : "NO");
+    
+    if (isSimulationMode) {
+      console.log("Using simulation mode - no microphone needed");
+      return true;
+    }
+    
     console.log("Setting up audio analysis...");
     
     // Check microphone access
@@ -114,6 +129,12 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     if (!streamRef.current) {
       console.error("Stream is still not available after requesting access");
       return false;
+    }
+    
+    // DEBUG: Check the browser audio capabilities
+    if (typeof navigator.mediaDevices.getSupportedConstraints === 'function') {
+      const supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
+      console.log("Supported audio constraints:", supportedConstraints);
     }
     
     // Log audio tracks info to debug
@@ -213,6 +234,20 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
             `Audio data detected! Max amplitude: ${maxVal}, Average: ${averageAmplitude.toFixed(2)}, ` +
             `Is active: ${isActive}, Mode: ${isSimulationMode ? "Simulation" : "Microphone"}`
           );
+          
+          // DEBUG: Dump raw audio frequency data at regular intervals
+          console.log("====== RAW AUDIO FREQUENCY DATA (FIRST 20 BINS) ======");
+          let rawDataStr = "";
+          for (let i = 0; i < Math.min(20, dataArray.length); i++) {
+            const freq = Math.round((i * audioContextRef.current!.sampleRate / 2) / bufferLength);
+            rawDataStr += `${freq}Hz: ${dataArray[i]}, `;
+          }
+          console.log(rawDataStr);
+          
+          // Always log when we detect significant audio
+          if (maxVal > 50) {
+            console.log(`SIGNIFICANT AUDIO DETECTED: ${maxVal} max amplitude!`);
+          }
         }
       }
     }

@@ -51,8 +51,24 @@ export function FrequencyExplorerMascot({
         setMascotMessage(messages[Math.floor(Math.random() * messages.length)]);
       }
     } else {
-      setMascotState('searching');
-      if (currentFrequency > 0) {
+      // When active but not detecting anything significant, make Echo bounce and encourage sound
+      if (isActive && currentFrequency <= 0) {
+        setMascotState('searching');
+        // Randomize encouragement messages for making noise
+        const noiseMessages = [
+          "Make some noise! Try humming, whistling, or clapping!",
+          "I need sound to detect frequencies! Try speaking or singing!",
+          "Try making different sounds - I'll analyze them for you!",
+          "Louder please! I'm listening for special frequencies!",
+          "Talk, sing, or play some music - I'll detect the frequencies!"
+        ];
+        setMascotMessage(noiseMessages[Math.floor(Math.random() * noiseMessages.length)]);
+      } 
+      // When detecting a frequency, show more excitement
+      else if (currentFrequency > 0) {
+        // Make Echo bounce when detecting frequencies
+        setMascotState('dancing');
+        
         if (Math.abs(currentFrequency - 432) < 15 || 
             Math.abs(currentFrequency - 528) < 15 ||
             Math.abs(currentFrequency - 639) < 15 || 
@@ -64,15 +80,22 @@ export function FrequencyExplorerMascot({
           setMascotMessage(`I'm detecting ${Math.round(currentFrequency)}Hz. Let's keep exploring!`);
         }
       } else {
+        setMascotState('searching');
         setMascotMessage("I'm listening for frequencies... make some sound!");
       }
     }
     
     // Show the message when state changes
     setShowMessage(true);
-    const timer = setTimeout(() => {
-      setShowMessage(false);
-    }, 5000); // Hide message after 5 seconds
+    
+    // Only hide the message after a timeout if not actively detecting
+    // This keeps encouragement messages visible while the detector is active
+    let timer: NodeJS.Timeout;
+    if (!isActive || currentFrequency > 0) {
+      timer = setTimeout(() => {
+        setShowMessage(false);
+      }, 5000); // Hide message after 5 seconds
+    }
     
     return () => clearTimeout(timer);
   }, [isActive, hasAngelicFrequency, currentFrequency, isDemoMode, isPlayingSound]);
