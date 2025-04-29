@@ -339,11 +339,32 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     }
     
     // In non-simulation mode, make detection even more sensitive if we're not detecting anything
-    if (!isSimulationMode && maxVal > 0 && maxVal < minAmplitude) {
+    if (!isSimulationMode) {
+      // Always log audio data periodically to help with debugging
+      if (Math.random() < 0.02) { // Log roughly every 50 frames
+        console.log(`Audio data: Max value=${maxVal}, Average=${averageAmplitude.toFixed(2)}, FFT size=${bufferLength}`);
+        
+        // In non-simulation mode with active microphone, show if we have frequencies in target range
+        const inRangeFreqs = [];
+        for (let i = minFreqIndex; i <= maxFreqIndex; i++) {
+          if (i < bufferLength && dataArray[i] > 10) {
+            const freq = Math.round((i * nyquist) / bufferLength);
+            inRangeFreqs.push({ freq, amplitude: dataArray[i] });
+          }
+        }
+        
+        if (inRangeFreqs.length > 0) {
+          console.log("Frequencies in target range:", 
+            inRangeFreqs.slice(0, 5).map(f => `${f.freq}Hz (${f.amplitude})`).join(", "));
+        }
+      }
+      
       // If we have some audio data but it's below threshold, adapt the threshold
       // to ensure we capture at least some frequencies
-      minAmplitude = Math.max(5, maxVal * 0.8);
-      console.log(`Adapting sensitivity threshold to ${minAmplitude.toFixed(2)} based on input level ${maxVal}`);
+      if (maxVal > 0 && maxVal < minAmplitude) {
+        minAmplitude = Math.max(3, maxVal * 0.9); // More aggressive threshold reduction (was 0.8)
+        console.log(`Adapting sensitivity threshold to ${minAmplitude.toFixed(2)} based on input level ${maxVal}`);
+      }
     }
     
     // Simulation mode that generates frequencies without using the microphone
