@@ -496,7 +496,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       if (isAngelic) {
         setDetectionStatus(isSimulationMode ? "Simulation: Angelic frequency detected!" : "Angelic frequency detected!");
       } else {
-        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone Active - Make some noise!");
       }
       
       // Track frequency detection for analysis
@@ -545,7 +545,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         // In microphone mode, use the traditional 0 Hz display
         setCurrentFrequency(0);
         setHasAngelicFrequency(false);
-        setDetectionStatus("Microphone - Detecting...");
+        setDetectionStatus("Microphone Active - Make some noise!");
       }
     }
     
@@ -604,7 +604,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       const success = await setupAudioAnalysis();
       if (success) {
         setIsActive(true);
-        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone Active - Make some noise!");
         
         // Initialize with a random frequency value if in simulation mode
         if (isSimulationMode) {
@@ -634,7 +634,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       // If detector is active, update the status message right away
       if (isActive) {
-        setDetectionStatus(newValue ? "Simulation Mode - Detecting..." : "Microphone - Detecting...");
+        setDetectionStatus(newValue ? "Simulation Mode - Detecting..." : "Microphone Active - Make some noise!");
         
         // When switching to simulation mode, immediately set a random frequency
         // so the user doesn't see 0 Hz
@@ -706,7 +706,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         } else {
           setCurrentFrequency(0);
           setHasAngelicFrequency(false);
-          setDetectionStatus("Microphone - Detecting...");
+          setDetectionStatus("Microphone Active - Make some noise!");
         }
       }
       
