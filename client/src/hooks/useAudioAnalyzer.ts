@@ -192,28 +192,45 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     analyzer.getByteFrequencyData(dataArray);
     
     // Debug: Check if we're getting any audio data
-    const hasAudioData = dataArray.some(value => value > 0);
-    if (!isSimulationMode && !hasAudioData) {
-      console.log("No audio data detected. Check microphone connection and volume.");
-    } else if (!isSimulationMode && hasAudioData) {
-      // Only log occasionally to avoid console spam
-      if (Math.random() < 0.01) {
-        // Find max value manually to avoid spread operator on Uint8Array
-        let maxVal = 0;
-        for (let i = 0; i < dataArray.length; i++) {
-          if (dataArray[i] > maxVal) maxVal = dataArray[i];
+    // More detailed audio data checking with amplitude reporting
+    let maxVal = 0;
+    let sumAmplitude = 0;
+    for (let i = 0; i < dataArray.length; i++) {
+      sumAmplitude += dataArray[i];
+      if (dataArray[i] > maxVal) maxVal = dataArray[i];
+    }
+    
+    const averageAmplitude = sumAmplitude / dataArray.length;
+    
+    if (!isSimulationMode) {
+      // Check for any audio data
+      if (maxVal <= 0) {
+        console.log("No audio data detected. Check microphone connection and volume.");
+      } else {
+        // Only log occasionally to avoid console spam
+        if (Math.random() < 0.05) {
+          console.log(
+            `Audio data detected! Max amplitude: ${maxVal}, Average: ${averageAmplitude.toFixed(2)}, ` +
+            `Is active: ${isActive}, Mode: ${isSimulationMode ? "Simulation" : "Microphone"}`
+          );
         }
-        console.log("Audio data detected! Max amplitude:", maxVal);
       }
     }
     
     // Store the frequency spectrum data for visualization
     setFrequencySpectrum(new Uint8Array(dataArray));
     
-    // Find dominant frequency
+    // Find dominant frequency with improved peak detection for low amplitude signals
     let maxValue = 0;
     let maxIndex = 0;
+    const audioContext = audioContextRef.current!;
+    const nyquist = audioContext.sampleRate / 2;
     
+    // Add a small bias toward frequencies in the target range to improve detection
+    const minFreqIndex = Math.floor((settings.minFrequency * bufferLength) / nyquist);
+    const maxFreqIndex = Math.ceil((settings.maxFrequency * bufferLength) / nyquist);
+    
+    // First pass - find the overall maximum
     for (let i = 0; i < bufferLength; i++) {
       if (dataArray[i] > maxValue) {
         maxValue = dataArray[i];
@@ -221,9 +238,37 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       }
     }
     
+    // Second pass - apply a boost to frequencies in our target range
+    // This helps with lower volume inputs where the dominant frequency might be outside our range
+    if (maxValue > 0 && !isSimulationMode) {
+      // Use a weighting factor to prioritize our frequency range when signal is weak
+      let boostedMaxValue = maxValue;
+      let boostedMaxIndex = maxIndex;
+      
+      for (let i = minFreqIndex; i <= maxFreqIndex; i++) {
+        if (i < bufferLength) {
+          // Apply a boost factor for frequencies in our target range
+          const boostedValue = dataArray[i] * 1.5; // 50% boost
+          
+          if (boostedValue > boostedMaxValue) {
+            boostedMaxValue = boostedValue;
+            boostedMaxIndex = i;
+          }
+        }
+      }
+      
+      // If we found a stronger boosted frequency in our range, use it
+      if (boostedMaxValue > maxValue) {
+        maxValue = dataArray[boostedMaxIndex]; // Keep the original amplitude
+        maxIndex = boostedMaxIndex;
+        
+        if (Math.random() < 0.05) {
+          console.log(`Using boosted frequency at ${Math.round((maxIndex * nyquist) / bufferLength)} Hz with amplitude ${maxValue}`);
+        }
+      }
+    }
+    
     // Convert index to frequency
-    const audioContext = audioContextRef.current!;
-    const nyquist = audioContext.sampleRate / 2;
     let frequency = Math.round((maxIndex * nyquist) / bufferLength);
     
     // Find the top 5 dominant frequencies in the spectrum
@@ -235,7 +280,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       const currentAmplitude = dataArray[i];
       
       // Check if this is a local maximum (higher than neighboring frequencies)
-      if (currentAmplitude > 30 && // Only consider frequencies with sufficient amplitude
+      // Lowered the minimum amplitude threshold from 30 to 10 to be more sensitive
+      if (currentAmplitude > 10 && // Only consider frequencies with sufficient amplitude
           currentAmplitude > dataArray[i - 1] && 
           currentAmplitude > dataArray[i - 2] &&
           currentAmplitude > dataArray[i + 1] && 
@@ -258,13 +304,13 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       .slice(0, 5);
     
     // Calculate total amplitude of all top peaks for percentage calculations
-    const totalAmplitude = topPeaks.reduce((sum, peak) => sum + peak.amplitude, 0);
+    const peaksTotalAmplitude = topPeaks.reduce((sum, peak) => sum + peak.amplitude, 0);
     
     // Convert peak indices to frequencies with additional information
     const dominantFreqs = topPeaks.map(peak => ({
       frequency: Math.round((peak.index * nyquist) / bufferLength),
       amplitude: peak.amplitude,
-      percentage: Math.round((peak.amplitude / (totalAmplitude || 1)) * 100)
+      percentage: Math.round((peak.amplitude / (peaksTotalAmplitude || 1)) * 100)
     }));
     
     // Update state with dominant frequencies that fall within our target range
@@ -279,17 +325,25 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     // Using a dynamic threshold based on sensitivity setting
     let minAmplitude = 30; // Base threshold for noise filtering
     
-    // Adjust threshold based on sensitivity setting
+    // Adjust threshold based on sensitivity setting - lowered values to be more sensitive
     switch(settings.sensitivity) {
       case 'Low':
-        minAmplitude = 60;
+        minAmplitude = 25; // Lowered from 60
         break;
       case 'Medium':
-        minAmplitude = 40;
+        minAmplitude = 15; // Lowered from 40 
         break;
       case 'High':
-        minAmplitude = 20;
+        minAmplitude = 5;  // Lowered from 20
         break;
+    }
+    
+    // In non-simulation mode, make detection even more sensitive if we're not detecting anything
+    if (!isSimulationMode && maxVal > 0 && maxVal < minAmplitude) {
+      // If we have some audio data but it's below threshold, adapt the threshold
+      // to ensure we capture at least some frequencies
+      minAmplitude = Math.max(5, maxVal * 0.8);
+      console.log(`Adapting sensitivity threshold to ${minAmplitude.toFixed(2)} based on input level ${maxVal}`);
     }
     
     // Simulation mode that generates frequencies without using the microphone
