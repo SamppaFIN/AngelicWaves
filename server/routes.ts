@@ -113,9 +113,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // New route for AI-powered frequency analysis using Perplexity API
   app.post("/api/analyze-frequencies", async (req, res) => {
     try {
-      const { detectedFrequencies, dominantFrequencies, userNotes } = req.body;
+      const { detectedFrequencies, dominantFrequencies, userContext } = req.body;
       
-      if (!detectedFrequencies && !dominantFrequencies) {
+      if ((!detectedFrequencies || !detectedFrequencies.length) && 
+          (!dominantFrequencies || !dominantFrequencies.length)) {
         return res.status(400).json({ message: "No frequency data provided" });
       }
       
@@ -127,17 +128,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.json({ analysis: fallbackAnalysis });
       }
       
+      // Format detected frequencies for the prompt
+      let detectedFreqText = "None detected";
+      if (detectedFrequencies && detectedFrequencies.length > 0) {
+        detectedFreqText = detectedFrequencies.map(freq => 
+          `- ${freq.frequency}Hz detected for ${freq.duration.toFixed(2)} seconds at ${new Date(freq.timestamp).toLocaleTimeString()}`
+        ).join('\n');
+      }
+      
+      // Format dominant frequencies for the prompt
+      let dominantFreqText = "None detected";
+      if (dominantFrequencies && dominantFrequencies.length > 0) {
+        dominantFreqText = dominantFrequencies.map(freq => 
+          `- ${freq.frequency}Hz with amplitude ${freq.amplitude} (${freq.percentage}% dominance)`
+        ).join('\n');
+      }
+      
       // Create prompt for the Perplexity API
       const prompt = `
       I'm analyzing sound frequencies detected in a real-time audio stream.
       
       Here are the detected stable frequencies over time:
-      ${detectedFrequencies || "None detected"}
+      ${detectedFreqText}
       
       Here are the current dominant frequencies in the spectrum:
-      ${dominantFrequencies || "None detected"}
+      ${dominantFreqText}
       
-      ${userNotes ? `Additional context: ${userNotes}` : ""}
+      ${userContext ? `Additional context: ${userContext}` : ""}
       
       Please provide an expert analysis that includes:
       1. The significance of these frequencies in terms of sound healing and therapeutic applications
@@ -148,6 +165,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
       
       Format the response as a well-structured, informative analysis with clear sections.
       `;
+      
+      console.log("Sending to Perplexity API:", prompt);
       
       // Call the Perplexity API
       const response = await fetch("https://api.perplexity.ai/chat/completions", {
@@ -168,17 +187,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
               content: prompt
             }
           ],
-          temperature: 0.2,
+          temperature: 0.3,
           max_tokens: 2000,
           stream: false
         })
       });
       
       if (!response.ok) {
-        throw new Error(`Perplexity API returned ${response.status}: ${await response.text()}`);
+        const errorText = await response.text();
+        console.error("Perplexity API error response:", errorText);
+        throw new Error(`Perplexity API returned ${response.status}: ${errorText}`);
       }
       
       const data = await response.json();
+      console.log("Perplexity API response:", JSON.stringify(data).substring(0, 300) + "...");
       
       // Type guard for the Perplexity API response
       interface PerplexityResponse {
@@ -204,23 +226,19 @@ export async function registerRoutes(app: Express): Promise<Server> {
       let analysis = "Could not generate analysis.";
       if (isValidResponse(data)) {
         analysis = data.choices[0].message.content;
+      } else {
+        console.error("Invalid response structure from Perplexity API:", data);
       }
-      
-      // Save the report for future reference
-      const report = {
-        detectedFrequencies: [],
-        analysis,
-        userNotes: userNotes || ""
-      };
       
       // Return the AI-generated analysis
       res.json({ analysis });
     } catch (error) {
       console.error("Perplexity API error:", error);
-      // Fall back to the built-in analysis method
+      // Return a more user-friendly error
       res.status(500).json({ 
         message: "Failed to analyze frequencies with AI", 
-        error: error instanceof Error ? error.message : String(error)
+        error: error instanceof Error ? error.message : String(error),
+        analysis: "We encountered an issue while analyzing your frequencies. Please try again or check your connection."
       });
     }
   });
