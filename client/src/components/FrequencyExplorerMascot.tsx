@@ -105,7 +105,7 @@ export function FrequencyExplorerMascot({
   };
 
   return (
-    <div className="fixed bottom-4 right-4 flex items-end">
+    <div className="fixed bottom-16 right-4 flex items-end">
       {/* Speech bubble */}
       {showMessage && (
         <div className="mb-2 mr-4 max-w-xs bg-white text-gray-800 p-3 rounded-lg rounded-br-none shadow-lg transition-opacity animate-fade-in">
