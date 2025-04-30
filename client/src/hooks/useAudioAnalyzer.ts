@@ -28,6 +28,8 @@ interface AudioAnalyzerResult {
   toggleCalculationMethod: () => void;
   demoFrequency: number;
   setDemoFrequency: (frequency: number) => void;
+  // New simulation function for debugging
+  simulateAudioAnalysis: (frequency: number) => boolean;
   // Add frequency spectrum analysis 
   frequencySpectrum: Uint8Array | null;
   dominantFrequencies: DominantFrequency[];
@@ -681,6 +683,52 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     };
   }, []);
 
+  // Simulate a complete audio detection process
+  const simulateAudioAnalysis = useCallback((frequency: number) => {
+    console.log(`💡 SIMULATING AUDIO ANALYSIS: Injecting fake ${frequency}Hz input data...`);
+    
+    // First make sure we're active and analyzer is initialized
+    if (!isActive) {
+      console.log("⚠️ Activating detector first for simulation...");
+      setIsActive(true);
+    }
+    
+    // We'll simulate the complete detection process for debugging
+    console.log("📊 Starting simulated audio detection process");
+    
+    // Force demo mode on for visualization
+    setIsDemoMode(true);
+    
+    // Set current frequency to show the input frequency
+    setCurrentFrequency(frequency);
+    
+    // Check if this is an angelic frequency
+    const isAngelic = isAngelicFrequency(frequency);
+    console.log(`${isAngelic ? '✨' : '🔍'} Input frequency ${frequency}Hz is ${isAngelic ? 'an angelic' : 'a normal'} frequency`);
+    
+    // Update detection status to reflect the demo
+    setDetectionStatus(`Demo Mode: Simulated ${frequency}Hz input${isAngelic ? ' (Angelic Frequency)' : ''}`);
+    
+    // Set the angelic frequency flag
+    setHasAngelicFrequency(isAngelic);
+    
+    // Add this to detected frequencies history
+    const timestamp = Date.now();
+    const newDetectedFrequency = {
+      frequency,
+      duration: 2, // Simulate a 2-second detection
+      timestamp
+    };
+    
+    // Add to detected frequencies list
+    setDetectedFrequencies(prev => [...prev, newDetectedFrequency]);
+    
+    console.log(`📝 Added frequency ${frequency}Hz to detection history`);
+    console.log(`✅ Audio input simulation complete! The detector is now showing ${frequency}Hz`);
+    
+    return true;
+  }, [isActive]);
+  
   // Toggle demo mode function - instantly shows an angelic frequency
   const toggleDemoMode = useCallback(() => {
     setIsDemoMode(prev => {
@@ -688,11 +736,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       // If turning on demo mode, automatically set to the current demoFrequency
       if (newDemoValue && isActive) {
-        setCurrentFrequency(demoFrequency);
-        // Check if this frequency is considered "angelic"
-        const isAngelic = isAngelicFrequency(demoFrequency);
-        setHasAngelicFrequency(isAngelic);
-        setDetectionStatus(`Demo Mode: Set to ${demoFrequency} Hz${isAngelic ? ' (Angelic Frequency)' : ''}`);
+        // Use our new simulation function to show complete detection process
+        simulateAudioAnalysis(demoFrequency);
+        console.log(`🎮 Demo mode enabled - simulating ${demoFrequency}Hz input`);
       } else if (isActive) {
         // If turning off, go back to normal detection or simulation
         if (isSimulationMode) {
@@ -712,7 +758,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       return newDemoValue;
     });
-  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, demoFrequency]);
+  }, [isActive, isSimulationMode, settings.minFrequency, settings.maxFrequency, demoFrequency, simulateAudioAnalysis]);
   
   // Toggle showing calculation method
   const toggleCalculationMethod = useCallback(() => {
@@ -737,6 +783,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     toggleCalculationMethod,
     demoFrequency,
     setDemoFrequency,
+    // Add new simulation function for debugging
+    simulateAudioAnalysis,
     // Add new properties for frequency spectrum analysis
     frequencySpectrum,
     dominantFrequencies

@@ -156,8 +156,12 @@ export default function Home() {
               {isActive && (
                 <button 
                   onClick={() => {
-                    // Play the 432Hz frequency - this will use the audio API
-                    // just like the 432Hz button in the FrequencyPlayer component
+                    // Use our new audio simulation function to create fake 432Hz input
+                    // This simulates the entire audio analysis process with fake input data
+                    console.log("🔍 TESTING: Simulating complete 432Hz input analysis...");
+                    
+                    // First play the actual tone so we can hear it
+                    // This uses the Web Audio API to generate the tone
                     const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
                     const oscillator = audioContext.createOscillator();
                     const gainNode = audioContext.createGain();
@@ -180,10 +184,9 @@ export default function Home() {
                       oscillator.disconnect();
                     }, 2000);
                     
-                    // Also enable demo mode to show the visual effect
-                    if (!isDemoMode) {
-                      toggleDemoMode();
-                    }
+                    // Now simulate the audio analysis process
+                    // This will generate fake 432Hz frequency data and pass it to the analyzer
+                    simulateAudioAnalysis(432);
                   }}
                   className={`text-xs px-3 py-1 rounded-md transition-colors ${
                     isDemoMode 
