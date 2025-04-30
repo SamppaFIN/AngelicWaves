@@ -1,0 +1,316 @@
+import { useState, useRef, useCallback } from 'react';
+import { Button } from '@/components/ui/button';
+import { Mic, Loader2, StopCircle, Play } from 'lucide-react';
+import { isAngelicFrequency } from '@/lib/frequencyAnalysis';
+import { DetectedFrequency } from '@shared/schema';
+import { useToast } from '@/hooks/use-toast';
+
+interface AudioRecorderProps {
+  onFrequencyDetected: (freq: DetectedFrequency) => void;
+  minFrequency: number;
+  maxFrequency: number;
+  sensitivity: 'Low' | 'Medium' | 'High';
+}
+
+export function AudioRecorder({ 
+  onFrequencyDetected, 
+  minFrequency,
+  maxFrequency,
+  sensitivity 
+}: AudioRecorderProps) {
+  const [isRecording, setIsRecording] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
+  const [recordingDuration, setRecordingDuration] = useState(0);
+  const [recordingStatus, setRecordingStatus] = useState('');
+  const { toast } = useToast();
+
+  // Refs for recording state
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const audioChunksRef = useRef<Blob[]>([]);
+  const startTimeRef = useRef<number>(0);
+  const timerRef = useRef<number | null>(null);
+
+  // Get sensitivity setting as numeric value
+  const getSensitivityValue = useCallback(() => {
+    switch (sensitivity) {
+      case 'Low': return 50;  // Higher threshold, less sensitive
+      case 'Medium': return 30;
+      case 'High': return 15; // Lower threshold, more sensitive
+      default: return 30;
+    }
+  }, [sensitivity]);
+
+  // Request microphone access and start recording
+  const startRecording = useCallback(async () => {
+    try {
+      console.log("Starting audio recording...");
+      setRecordingStatus('Requesting microphone access...');
+      
+      // Reset any previous recording data
+      audioChunksRef.current = [];
+      setRecordingBlob(null);
+      
+      // Try multiple audio constraint combinations
+      const constraintsOptions = [
+        { audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } },
+        { audio: true },
+        { audio: { sampleRate: { ideal: 44100 } } }
+      ];
+      
+      let stream: MediaStream | null = null;
+      let successConstraints = null;
+      
+      // Try each constraint option until one works
+      for (const constraints of constraintsOptions) {
+        try {
+          console.log("Trying microphone access with:", JSON.stringify(constraints));
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          successConstraints = constraints;
+          console.log("Microphone access successful with:", JSON.stringify(constraints));
+          break;
+        } catch (err) {
+          console.warn("Failed with constraints:", JSON.stringify(constraints), err);
+        }
+      }
+      
+      if (!stream) {
+        throw new Error("All microphone access attempts failed");
+      }
+      
+      streamRef.current = stream;
+      
+      // Create media recorder
+      const options = { mimeType: 'audio/webm' };
+      const recorder = new MediaRecorder(stream, options);
+      mediaRecorderRef.current = recorder;
+      
+      // Set up event handlers
+      recorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
+        }
+      };
+      
+      recorder.onstop = () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        setRecordingBlob(audioBlob);
+        const duration = Date.now() - startTimeRef.current;
+        setRecordingDuration(duration);
+        
+        // Start analyzing the recorded audio
+        analyzeRecordedAudio(audioBlob, duration);
+        
+        // Stop the tracks to release microphone
+        stream?.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      };
+      
+      // Start recording
+      recorder.start();
+      startTimeRef.current = Date.now();
+      setIsRecording(true);
+      setRecordingStatus('Recording audio...');
+      
+      // Automatically stop recording after 3 seconds
+      setTimeout(() => {
+        if (recorder.state === 'recording') {
+          stopRecording();
+        }
+      }, 3000);
+      
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      setRecordingStatus('Microphone access failed');
+      toast({
+        title: "Recording failed",
+        description: "Could not access the microphone. Please check browser permissions.",
+        variant: "destructive"
+      });
+    }
+  }, [toast]);
+  
+  // Stop the recording
+  const stopRecording = useCallback(() => {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      console.log("Stopping audio recording...");
+      setRecordingStatus('Stopping recording...');
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+    }
+  }, []);
+  
+  // Analyze the recorded audio blob
+  const analyzeRecordedAudio = useCallback(async (audioBlob: Blob, duration: number) => {
+    try {
+      setIsAnalyzing(true);
+      setRecordingStatus('Analyzing audio...');
+      
+      // Create an audio context
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      
+      // Convert blob to array buffer
+      const arrayBuffer = await audioBlob.arrayBuffer();
+      
+      // Decode the audio data
+      const audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+      
+      // Get the audio data
+      const channelData = audioBuffer.getChannelData(0);
+      
+      // Perform FFT analysis
+      const fftSize = 4096;
+      const analyzer = audioContext.createAnalyser();
+      analyzer.fftSize = fftSize;
+      
+      // Create a buffer source to play the audio for analysis
+      const source = audioContext.createBufferSource();
+      source.buffer = audioBuffer;
+      
+      // Connect the source to the analyzer
+      source.connect(analyzer);
+      
+      // Connect analyzer to destination to allow playback during analysis
+      analyzer.connect(audioContext.destination);
+      
+      // Create a buffer to store frequency data
+      const frequencyData = new Uint8Array(analyzer.frequencyBinCount);
+      
+      // Start the source
+      source.start(0);
+      
+      // Wait a short time to let the analyzer collect data
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Get frequency data
+      analyzer.getByteFrequencyData(frequencyData);
+      
+      // Find the dominant frequency
+      let maxValue = 0;
+      let maxIndex = 0;
+      
+      // First scan for the frequency with the highest amplitude
+      for (let i = 0; i < frequencyData.length; i++) {
+        if (frequencyData[i] > maxValue) {
+          maxValue = frequencyData[i];
+          maxIndex = i;
+        }
+      }
+      
+      // Get the detected frequency
+      const nyquist = audioContext.sampleRate / 2;
+      const frequency = Math.round((maxIndex * nyquist) / analyzer.frequencyBinCount);
+      
+      console.log(`Detected dominant frequency: ${frequency}Hz with amplitude ${maxValue}`);
+      
+      // Check if the amplitude is above the sensitivity threshold
+      const sensitivityThreshold = getSensitivityValue();
+      
+      if (maxValue >= sensitivityThreshold) {
+        // Check if the frequency is in our target range
+        if (frequency >= minFrequency && frequency <= maxFrequency) {
+          const isAngelic = isAngelicFrequency(frequency);
+          
+          console.log(`✅ Frequency ${frequency}Hz is ${isAngelic ? 'an angelic frequency' : 'not an angelic frequency'}`);
+          
+          // Create a detected frequency object
+          const detectedFreq: DetectedFrequency = {
+            frequency,
+            duration: duration / 1000, // convert ms to seconds
+            timestamp: Date.now()
+          };
+          
+          // Add to the detected frequencies
+          onFrequencyDetected(detectedFreq);
+          
+          setRecordingStatus(`Detected frequency: ${frequency}Hz ${isAngelic ? '(Angelic)' : ''}`);
+        } else {
+          setRecordingStatus(`Detected frequency ${frequency}Hz is outside target range`);
+        }
+      } else {
+        setRecordingStatus(`No significant frequency detected (max amplitude: ${maxValue})`);
+      }
+      
+      // Clean up
+      source.stop();
+      source.disconnect();
+      analyzer.disconnect();
+      audioContext.close();
+      
+    } catch (error) {
+      console.error("Error analyzing audio:", error);
+      setRecordingStatus('Analysis failed');
+      toast({
+        title: "Analysis failed",
+        description: "Could not analyze the recorded audio.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsAnalyzing(false);
+    }
+  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, toast]);
+  
+  // Play back the recorded audio
+  const playRecording = useCallback(() => {
+    if (recordingBlob) {
+      const url = URL.createObjectURL(recordingBlob);
+      const audio = new Audio(url);
+      audio.play();
+    }
+  }, [recordingBlob]);
+  
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-col items-center space-y-2">
+        <Button 
+          onClick={isRecording ? stopRecording : startRecording}
+          disabled={isAnalyzing}
+          className={isRecording 
+            ? "bg-red-600 hover:bg-red-700 text-white" 
+            : "bg-green-600 hover:bg-green-700 text-white"}
+          size="lg"
+        >
+          {isRecording ? (
+            <>
+              <StopCircle className="mr-2 h-5 w-5" />
+              Stop Recording
+            </>
+          ) : isAnalyzing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Analyzing...
+            </>
+          ) : (
+            <>
+              <Mic className="mr-2 h-5 w-5" />
+              Start Recording (3 seconds)
+            </>
+          )}
+        </Button>
+        
+        {recordingBlob && (
+          <Button 
+            onClick={playRecording}
+            variant="outline"
+            size="sm"
+            className="mt-2"
+          >
+            <Play className="mr-1 h-4 w-4" />
+            Play Recording
+          </Button>
+        )}
+      </div>
+      
+      <div className="text-center text-sm text-gray-400">
+        {recordingStatus || "Press the button to start recording and analyzing audio"}
+      </div>
+      
+      {recordingBlob && (
+        <div className="text-center text-sm text-gray-400">
+          Recording duration: {(recordingDuration / 1000).toFixed(1)} seconds
+        </div>
+      )}
+    </div>
+  );
+}
