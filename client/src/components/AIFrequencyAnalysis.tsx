@@ -45,34 +45,54 @@ export function AIFrequencyAnalysis({
     setIsLoading(true);
     
     try {
+      console.log("Preparing frequency data for AI analysis...");
       const frequencyData = {
         detectedFrequencies,
         dominantFrequencies,
         userContext: context
       };
       
-      const result = await apiRequest('/api/analyze-frequencies', {
-        method: 'POST',
-        body: JSON.stringify(frequencyData)
-      });
+      console.log(`Sending ${detectedFrequencies.length} detected frequencies and ${dominantFrequencies.length} dominant frequencies for analysis`);
       
-      if (result.analysis) {
-        setAiInsight(result.analysis);
-        onAiInsightGenerated(result.analysis);
-        
-        toast({
-          title: "Analysis complete",
-          description: "AI has analyzed your frequency patterns.",
+      try {
+        const result = await apiRequest('/api/analyze-frequencies', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(frequencyData)
         });
-      } else {
-        throw new Error("No analysis returned");
+        
+        console.log("AI analysis API response received:", result);
+        
+        if (result && result.analysis) {
+          console.log("Analysis received successfully, length:", result.analysis.length);
+          setAiInsight(result.analysis);
+          onAiInsightGenerated(result.analysis);
+          
+          toast({
+            title: "Analysis complete",
+            description: "AI has analyzed your frequency patterns.",
+          });
+        } else {
+          console.error("API responded but no analysis in response:", result);
+          throw new Error("No analysis returned in API response");
+        }
+      } catch (apiError) {
+        console.error("AI analysis API request failed:", apiError);
+        throw new Error(`API request failed: ${apiError instanceof Error ? apiError.message : String(apiError)}`);
       }
     } catch (error) {
-      console.error("Error generating AI insight:", error);
+      console.error("Failed to get analysis:", error);
+      
+      // More specific error message based on the error
+      const errorMessage = error instanceof Error 
+        ? `Error: ${error.message}`
+        : "Unknown error occurred";
       
       toast({
         title: "Analysis failed",
-        description: "Unable to generate AI insight. The API key might be missing or invalid.",
+        description: "Unable to generate AI insight. " + errorMessage,
         variant: "destructive"
       });
     } finally {
