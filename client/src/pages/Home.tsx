@@ -155,7 +155,36 @@ export default function Home() {
               
               {isActive && (
                 <button 
-                  onClick={toggleDemoMode}
+                  onClick={() => {
+                    // Play the 432Hz frequency - this will use the audio API
+                    // just like the 432Hz button in the FrequencyPlayer component
+                    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+                    const oscillator = audioContext.createOscillator();
+                    const gainNode = audioContext.createGain();
+                    
+                    // Set volume to 20%
+                    gainNode.gain.value = 0.2;
+                    gainNode.connect(audioContext.destination);
+                    
+                    // Configure the oscillator
+                    oscillator.type = 'sine';
+                    oscillator.frequency.setValueAtTime(432, audioContext.currentTime);
+                    oscillator.connect(gainNode);
+                    
+                    // Start playing for 2 seconds
+                    console.log("📢 PLAYING SOUND: Starting 432Hz tone...");
+                    oscillator.start();
+                    setTimeout(() => {
+                      console.log("📢 SOUND COMPLETE: 432Hz tone stopped");
+                      oscillator.stop();
+                      oscillator.disconnect();
+                    }, 2000);
+                    
+                    // Also enable demo mode to show the visual effect
+                    if (!isDemoMode) {
+                      toggleDemoMode();
+                    }
+                  }}
                   className={`text-xs px-3 py-1 rounded-md transition-colors ${
                     isDemoMode 
                       ? 'bg-purple-600 hover:bg-purple-700 text-white' 
