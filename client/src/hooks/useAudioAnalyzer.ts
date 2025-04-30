@@ -68,7 +68,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     }
   }, [settings.sensitivity]);
 
-  // Request microphone access
+  // Request microphone access with enhanced error handling and mobile detection
   const requestMicrophoneAccess = useCallback(async (): Promise<boolean> => {
     try {
       console.log("Requesting microphone access...");
@@ -76,25 +76,95 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       // Check if navigator.mediaDevices is available
       if (!navigator.mediaDevices) {
         console.error("navigator.mediaDevices is not available in this browser");
+        
+        // Check if we're on a mobile device
+        const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobileDevice) {
+          console.warn("Mobile device detected, this may require additional permissions or user interactions");
+          console.log("Suggesting workarounds for mobile devices...");
+          // We'll handle this in the UI with better instructions for mobile users
+        }
+        
         setMicrophoneAccess(false);
         return false;
       }
       
-      const stream = await navigator.mediaDevices.getUserMedia({ 
-        audio: {
-          echoCancellation: true,
-          noiseSuppression: true,
-          autoGainControl: true
-        } 
-      });
+      // Try multiple audio constraint combinations
+      // Some browsers have issues with specific constraints
+      const constraintsOptions = [
+        // Standard options with all enhancements
+        { 
+          audio: {
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true
+          }
+        },
+        // Minimal options without enhancements
+        { audio: true },
+        // Try with specific sampleRate options
+        {
+          audio: {
+            sampleRate: { ideal: 44100 }
+          }
+        }
+      ];
+      
+      let stream: MediaStream | null = null;
+      let successOptions = null;
+      
+      // Try each constraint option until one works
+      for (const constraints of constraintsOptions) {
+        try {
+          console.log("Trying microphone access with constraints:", JSON.stringify(constraints));
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          successOptions = constraints;
+          console.log("Microphone access successful with options:", JSON.stringify(constraints));
+          break;
+        } catch (err) {
+          console.warn("Failed with these constraints:", JSON.stringify(constraints), err);
+          // Continue to the next option
+        }
+      }
+      
+      if (!stream) {
+        throw new Error("All microphone access attempts failed");
+      }
       
       console.log("Microphone access granted:", stream.getAudioTracks().length, "audio tracks available");
+      console.log("Successful constraints:", JSON.stringify(successOptions));
+      
+      // Additional debug info about the audio tracks
+      const audioTracks = stream.getAudioTracks();
+      audioTracks.forEach((track, index) => {
+        console.log(`Audio track ${index} details:`, {
+          label: track.label,
+          enabled: track.enabled,
+          muted: track.muted,
+          readyState: track.readyState,
+          constraints: track.getConstraints(),
+          settings: track.getSettings()
+        });
+      });
+      
       streamRef.current = stream;
       setMicrophoneAccess(true);
       return true;
     } catch (error) {
       console.error("Microphone access denied:", error);
       setMicrophoneAccess(false);
+      
+      // Try to provide more helpful errors based on the error message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      
+      if (errorMessage.includes("Permission denied") || errorMessage.includes("NotAllowedError")) {
+        console.error("USER DENIED PERMISSION: The user explicitly denied microphone access");
+      } else if (errorMessage.includes("NotFoundError")) {
+        console.error("NO MICROPHONE FOUND: No microphone device is connected to this device");
+      } else if (errorMessage.includes("NotReadableError")) {
+        console.error("HARDWARE ERROR: The microphone is in use by another application or there's a hardware error");
+      }
+      
       return false;
     }
   }, []);
@@ -220,7 +290,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   // Create a ref to track silent audio frames
   const silentFrameCountRef = useRef(0);
   
-  // Analyze audio for frequencies
+  // Analyze audio for frequencies with enhanced recovery mechanisms
   const analyzeAudio = useCallback(() => {
     if (!analyzerRef.current || !isActive) {
       if (!analyzerRef.current && isActive && !isSimulationMode) {
@@ -238,7 +308,52 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       // This is where the actual audio data is collected
       // If this fails, there's likely an issue with the audio stream
-      analyzer.getByteFrequencyData(dataArray);
+      try {
+        analyzer.getByteFrequencyData(dataArray);
+      } catch (analyzerError) {
+        console.error("Error getting frequency data from analyzer:", analyzerError);
+        
+        // Attempt recovery - recreate the audio setup if we hit an error
+        console.log("🔄 RECOVERY: Attempting to recreate audio analyzer");
+        
+        // Try to clean up existing resources
+        if (sourceRef.current) {
+          try {
+            sourceRef.current.disconnect();
+          } catch (err) {
+            console.warn("Error disconnecting source:", err);
+          }
+        }
+        
+        if (audioContextRef.current) {
+          try {
+            // Create a new analyzer with the existing context
+            analyzerRef.current = audioContextRef.current.createAnalyser();
+            const fftSize = getFftSize();
+            analyzerRef.current.fftSize = fftSize;
+            analyzerRef.current.smoothingTimeConstant = 0.8;
+            
+            // If we have a stream, reconnect it
+            if (streamRef.current) {
+              sourceRef.current = audioContextRef.current.createMediaStreamSource(streamRef.current);
+              sourceRef.current.connect(analyzerRef.current);
+              console.log("Successfully recreated audio analyzer");
+              
+              // Get data from the new analyzer
+              analyzer.getByteFrequencyData(dataArray);
+            } else {
+              console.error("Cannot recover - no media stream available");
+              return;
+            }
+          } catch (recoveryError) {
+            console.error("Recovery failed:", recoveryError);
+            return;
+          }
+        } else {
+          console.error("Cannot recover - no audio context available");
+          return;
+        }
+      }
       
       // Enhanced debugging: Check if we're getting any audio data
       let maxVal = 0;
