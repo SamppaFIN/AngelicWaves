@@ -110,13 +110,25 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     console.log("MediaStream:", streamRef.current ? "AVAILABLE" : "NOT AVAILABLE");
     console.log("Analyzer:", analyzerRef.current ? "INITIALIZED" : "NOT INITIALIZED");
     console.log("Detector Active:", isActive ? "YES" : "NO");
+    console.log("Browser:", navigator.userAgent);
+    console.log("Device:", navigator.platform);
+    
+    // Check for browser-specific audio constraints or limitations
+    if (navigator.mediaDevices && navigator.mediaDevices.getSupportedConstraints) {
+      const supportedConstraints = navigator.mediaDevices.getSupportedConstraints();
+      console.log("Audio constraints supported by browser:", 
+        Object.keys(supportedConstraints).filter(key => 
+          ['autoGainControl', 'echoCancellation', 'noiseSuppression'].includes(key)
+        )
+      );
+    }
     
     if (isSimulationMode) {
       console.log("Using simulation mode - no microphone needed");
       return true;
     }
     
-    console.log("Setting up audio analysis...");
+    console.log("Setting up audio analysis with enhanced debugging...");
     
     // Check microphone access
     if (!streamRef.current) {
@@ -205,54 +217,100 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     }
   }, [getFftSize, requestMicrophoneAccess]);
 
+  // Create a ref to track silent audio frames
+  const silentFrameCountRef = useRef(0);
+  
   // Analyze audio for frequencies
   const analyzeAudio = useCallback(() => {
-    if (!analyzerRef.current || !isActive) return;
-    
-    const analyzer = analyzerRef.current;
-    const bufferLength = analyzer.frequencyBinCount;
-    const dataArray = new Uint8Array(bufferLength);
-    analyzer.getByteFrequencyData(dataArray);
-    
-    // Debug: Check if we're getting any audio data
-    // More detailed audio data checking with amplitude reporting
-    let maxVal = 0;
-    let sumAmplitude = 0;
-    for (let i = 0; i < dataArray.length; i++) {
-      sumAmplitude += dataArray[i];
-      if (dataArray[i] > maxVal) maxVal = dataArray[i];
+    if (!analyzerRef.current || !isActive) {
+      if (!analyzerRef.current && isActive && !isSimulationMode) {
+        console.warn("⚠️ CRITICAL ERROR: Audio analysis attempted without analyzer being initialized!");
+        console.log("Attempting to reinitialize audio system...");
+        setupAudioAnalysis();
+      }
+      return;
     }
     
-    const averageAmplitude = sumAmplitude / dataArray.length;
-    
-    if (!isSimulationMode) {
-      // Check for any audio data
-      if (maxVal <= 0) {
-        console.log("No audio data detected. Check microphone connection and volume.");
-      } else {
-        // Only log occasionally to avoid console spam
-        if (Math.random() < 0.05) {
-          console.log(
-            `Audio data detected! Max amplitude: ${maxVal}, Average: ${averageAmplitude.toFixed(2)}, ` +
-            `Is active: ${isActive}, Mode: ${isSimulationMode ? "Simulation" : "Microphone"}`
-          );
+    try {
+      const analyzer = analyzerRef.current;
+      const bufferLength = analyzer.frequencyBinCount;
+      const dataArray = new Uint8Array(bufferLength);
+      
+      // This is where the actual audio data is collected
+      // If this fails, there's likely an issue with the audio stream
+      analyzer.getByteFrequencyData(dataArray);
+      
+      // Enhanced debugging: Check if we're getting any audio data
+      let maxVal = 0;
+      let sumAmplitude = 0;
+      let nonZeroCount = 0;
+      
+      for (let i = 0; i < dataArray.length; i++) {
+        sumAmplitude += dataArray[i];
+        if (dataArray[i] > maxVal) maxVal = dataArray[i];
+        if (dataArray[i] > 0) nonZeroCount++;
+      }
+      
+      const averageAmplitude = sumAmplitude / dataArray.length;
+      const percentageNonZero = (nonZeroCount / dataArray.length) * 100;
+      
+      // In regular mode (not simulation), add extensive debugging to help diagnose audio issues
+      if (!isSimulationMode) {
+        if (maxVal <= 2) { // Even with silence, there should be some minimal noise
+          // Increment silent frame counter
+          silentFrameCountRef.current++;
           
-          // DEBUG: Dump raw audio frequency data at regular intervals
-          console.log("====== RAW AUDIO FREQUENCY DATA (FIRST 20 BINS) ======");
-          let rawDataStr = "";
-          for (let i = 0; i < Math.min(20, dataArray.length); i++) {
-            const freq = Math.round((i * audioContextRef.current!.sampleRate / 2) / bufferLength);
-            rawDataStr += `${freq}Hz: ${dataArray[i]}, `;
+          // Log more frequently if we're getting multiple silent frames
+          if (silentFrameCountRef.current % 100 === 0) {
+            console.warn(`⚠️ WARNING: ${silentFrameCountRef.current} consecutive silent audio frames detected`);
+            console.log("🔍 AUDIO DEBUG: Check if microphone is connected and not muted");
+            console.log("AudioContext state:", audioContextRef.current?.state);
+            
+            // Check if audio tracks are still active
+            if (streamRef.current) {
+              const audioTracks = streamRef.current.getAudioTracks();
+              console.log(`Audio tracks: ${audioTracks.length}, Active: ${audioTracks.some(t => t.enabled)}`);
+              
+              // Try forcing track enable again if we're getting silent frames
+              audioTracks.forEach(track => {
+                if (!track.enabled) {
+                  console.log("Re-enabling disabled audio track");
+                  track.enabled = true;
+                }
+              });
+            }
           }
-          console.log(rawDataStr);
+        } else {
+          // Reset count when we detect audio
+          if (silentFrameCountRef.current > 0) {
+            console.log(`Audio detected after ${silentFrameCountRef.current} silent frames`);
+            silentFrameCountRef.current = 0;
+          }
           
-          // Always log when we detect significant audio
-          if (maxVal > 50) {
-            console.log(`SIGNIFICANT AUDIO DETECTED: ${maxVal} max amplitude!`);
+          // Only log occasionally to avoid console spam
+          if (Math.random() < 0.05) {
+            console.log(
+              `🎤 AUDIO DATA: Max amplitude: ${maxVal}, Average: ${averageAmplitude.toFixed(2)}, ` +
+              `Non-zero bins: ${nonZeroCount}/${bufferLength} (${percentageNonZero.toFixed(1)}%), ` +
+              `Is active: ${isActive}, Mode: ${isSimulationMode ? "Simulation" : "Microphone"}`
+            );
+            
+            // DEBUG: Dump raw audio frequency data at regular intervals
+            console.log("====== RAW AUDIO FREQUENCY DATA (FIRST 20 BINS) ======");
+            let rawDataStr = "";
+            for (let i = 0; i < Math.min(20, dataArray.length); i++) {
+              const freq = Math.round((i * audioContextRef.current!.sampleRate / 2) / bufferLength);
+              rawDataStr += `${freq}Hz: ${dataArray[i]}, `;
+            }
+            console.log(rawDataStr);
+            
+            // Always log when we detect significant audio
+            if (maxVal > 50) {
+              console.log(`🔊 SIGNIFICANT AUDIO DETECTED: ${maxVal} max amplitude!`);
+            }
           }
         }
       }
-    }
     
     // Store the frequency spectrum data for visualization
     setFrequencySpectrum(new Uint8Array(dataArray));
@@ -553,6 +611,28 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     
     // Continue analyzing
     animationFrameRef.current = requestAnimationFrame(analyzeAudio);
+    } catch (error) {
+      console.error("Error during audio analysis:", error);
+      
+      // Try to recover by resetting the audio system on next frame
+      if (isActive && !isSimulationMode) {
+        console.warn("Attempting to recover from audio analysis error...");
+        setTimeout(() => {
+          if (isActive) {
+            setupAudioAnalysis().then(success => {
+              if (success) {
+                console.log("Audio system recovered successfully");
+              } else {
+                console.error("Failed to recover audio system"); 
+              }
+            });
+          }
+        }, 1000);
+      }
+      
+      // Continue the animation loop even after an error
+      animationFrameRef.current = requestAnimationFrame(analyzeAudio);
+    }
   }, [
     isActive, 
     isSimulationMode, 
