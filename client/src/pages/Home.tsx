@@ -49,6 +49,8 @@ export default function Home() {
     toggleCalculationMethod,
     demoFrequency,
     setDemoFrequency,
+    // New simulation function for debugging
+    simulateAudioAnalysis,
     // Add the new frequency spectrum analysis properties
     frequencySpectrum,
     dominantFrequencies
