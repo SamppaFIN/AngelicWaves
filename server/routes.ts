@@ -131,7 +131,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format detected frequencies for the prompt
       let detectedFreqText = "None detected";
       if (detectedFrequencies && detectedFrequencies.length > 0) {
-        detectedFreqText = detectedFrequencies.map(freq => 
+        detectedFreqText = detectedFrequencies.map((freq: { frequency: number, duration: number, timestamp: number }) => 
           `- ${freq.frequency}Hz detected for ${freq.duration.toFixed(2)} seconds at ${new Date(freq.timestamp).toLocaleTimeString()}`
         ).join('\n');
       }
@@ -139,7 +139,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       // Format dominant frequencies for the prompt
       let dominantFreqText = "None detected";
       if (dominantFrequencies && dominantFrequencies.length > 0) {
-        dominantFreqText = dominantFrequencies.map(freq => 
+        dominantFreqText = dominantFrequencies.map((freq: { frequency: number, amplitude: number, percentage: number }) => 
           `- ${freq.frequency}Hz with amplitude ${freq.amplitude} (${freq.percentage}% dominance)`
         ).join('\n');
       }
@@ -166,16 +166,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
       Format the response as a well-structured, informative analysis with clear sections.
       `;
       
-      console.log("Sending to Perplexity API:", prompt);
+      console.log("Sending to Perplexity API with valid key:", apiKey ? "API Key present" : "No API key");
       
-      // Call the Perplexity API
-      const response = await fetch("https://api.perplexity.ai/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${apiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
+      let response;
+      try {
+        console.log("Preparing API call to Perplexity...");
+      
+        // Call the Perplexity API with more debug logging
+        const apiUrl = "https://api.perplexity.ai/chat/completions";
+        console.log("API URL:", apiUrl);
+        
+        const requestBody = {
           model: "llama-3.1-sonar-small-128k-online",
           messages: [
             {
@@ -190,16 +191,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
           temperature: 0.3,
           max_tokens: 2000,
           stream: false
-        })
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Perplexity API error response:", errorText);
-        throw new Error(`Perplexity API returned ${response.status}: ${errorText}`);
+        };
+        
+        console.log("Request headers:", {
+          "Authorization": "Bearer <REDACTED>",
+          "Content-Type": "application/json"
+        });
+        console.log("Request body:", JSON.stringify(requestBody).substring(0, 200) + "...");
+        
+        response = await fetch(apiUrl, {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(requestBody)
+        });
+        
+        console.log("Perplexity API response status:", response.status);
+        
+        // Create a safer way to log headers without using spread operator
+        const headers: Record<string, string> = {};
+        response.headers.forEach((value, key) => {
+          headers[key] = value;
+        });
+        console.log("Perplexity API response headers:", headers);
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error("Perplexity API error response:", errorText);
+          throw new Error(`Perplexity API returned ${response.status}: ${errorText}`);
+        }
+        
+        console.log("Perplexity API response OK, processing JSON...");
+      } catch (fetchError) {
+        console.error("Error during Perplexity API fetch:", fetchError);
+        throw new Error(`Fetch error with Perplexity API: ${fetchError instanceof Error ? fetchError.message : String(fetchError)}`);
       }
       
-      const data = await response.json();
+      // Process the response outside the try-catch to handle JSON parsing separately
+      if (!response) {
+        throw new Error("API response was undefined");
+      }
+      
+      let data;
+      try {
+        data = await response.json();
+        console.log("Successfully parsed API response to JSON");
+      } catch (jsonError) {
+        console.error("Error parsing JSON from API response:", jsonError);
+        throw new Error("Failed to parse API response as JSON");
+      }
       console.log("Perplexity API response:", JSON.stringify(data).substring(0, 300) + "...");
       
       // Type guard for the Perplexity API response
