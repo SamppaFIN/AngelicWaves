@@ -11,6 +11,7 @@ import { FrequencyMeterPanel } from "@/components/FrequencyMeterPanel";
 import { DemoFrequencySlider } from "@/components/DemoFrequencySlider";
 import { AngelicFrequencyPresentation } from "@/components/AngelicFrequencyPresentation";
 import { AIFrequencyAnalysis } from "@/components/AIFrequencyAnalysis";
+import { AudioRecorder } from "@/components/AudioRecorder";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { Switch } from "@/components/ui/switch";
@@ -18,6 +19,7 @@ import { FrequencySettings, AnalysisReportData } from "@/lib/types";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { playActivationSound, playDeactivationSound } from "@/lib/soundEffects";
+import { DetectedFrequency } from "@shared/schema";
 
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
@@ -31,14 +33,17 @@ export default function Home() {
   
   const { toast } = useToast();
   
+  // We'll manage detected frequencies manually to handle AudioRecorder component
+  const [localDetectedFrequencies, setLocalDetectedFrequencies] = useState<DetectedFrequency[]>([]);
+  
   const { 
     isActive,
     currentFrequency,
     detectionStatus,
-    detectedFrequencies,
+    detectedFrequencies: hookDetectedFrequencies,
     hasAngelicFrequency,
     toggleDetector,
-    resetDetectedFrequencies,
+    resetDetectedFrequencies: hookResetDetectedFrequencies,
     microphoneAccess,
     requestMicrophoneAccess,
     isSimulationMode,
@@ -55,6 +60,15 @@ export default function Home() {
     frequencySpectrum,
     dominantFrequencies
   } = useAudioAnalyzer(settings);
+  
+  // Combine frequencies from the hook and our local state
+  const detectedFrequencies = [...hookDetectedFrequencies, ...localDetectedFrequencies];
+  
+  // Create a reset function that resets both
+  const resetDetectedFrequencies = useCallback(() => {
+    hookResetDetectedFrequencies();
+    setLocalDetectedFrequencies([]);
+  }, [hookResetDetectedFrequencies]);
 
   const handleToggleClick = useCallback(() => {
     if (!isActive && !microphoneAccess) {
@@ -158,37 +172,7 @@ export default function Home() {
               {isActive && (
                 <button 
                   onClick={() => {
-                    // Use our new audio simulation function to create fake 432Hz input
-                    // This simulates the entire audio analysis process with fake input data
-                    console.log("🔍 TESTING: Simulating complete 432Hz input analysis...");
-                    
-                    // First play the actual tone so we can hear it
-                    // This uses the Web Audio API to generate the tone
-                    const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
-                    const oscillator = audioContext.createOscillator();
-                    const gainNode = audioContext.createGain();
-                    
-                    // Set volume to 20%
-                    gainNode.gain.value = 0.2;
-                    gainNode.connect(audioContext.destination);
-                    
-                    // Configure the oscillator
-                    oscillator.type = 'sine';
-                    oscillator.frequency.setValueAtTime(432, audioContext.currentTime);
-                    oscillator.connect(gainNode);
-                    
-                    // Start playing for 2 seconds
-                    console.log("📢 PLAYING SOUND: Starting 432Hz tone...");
-                    oscillator.start();
-                    setTimeout(() => {
-                      console.log("📢 SOUND COMPLETE: 432Hz tone stopped");
-                      oscillator.stop();
-                      oscillator.disconnect();
-                    }, 2000);
-                    
-                    // Now simulate the audio analysis process
-                    // This will generate fake 432Hz frequency data and pass it to the analyzer
-                    simulateAudioAnalysis(432);
+                    toggleDemoMode();
                   }}
                   className={`text-xs px-3 py-1 rounded-md transition-colors ${
                     isDemoMode 
@@ -196,7 +180,7 @@ export default function Home() {
                       : 'bg-gray-700 hover:bg-gray-600 text-gray-300'
                   }`}
                 >
-                  {isDemoMode ? 'Exit Demo' : 'Show Angelic Frequency'}
+                  {isDemoMode ? 'Exit Demo' : 'Start Demo Mode'}
                 </button>
               )}
             </div>
@@ -272,13 +256,48 @@ export default function Home() {
             onSettingsChange={handleSettingsChange}
           />
           
-          <DemoFrequencySlider
-            minFrequency={settings.minFrequency}
-            maxFrequency={settings.maxFrequency}
-            demoFrequency={demoFrequency}
-            onDemoFrequencyChange={setDemoFrequency}
-            isDemoMode={isDemoMode}
-          />
+          {isDemoMode ? (
+            <DemoFrequencySlider
+              minFrequency={settings.minFrequency}
+              maxFrequency={settings.maxFrequency}
+              demoFrequency={demoFrequency}
+              onDemoFrequencyChange={setDemoFrequency}
+              isDemoMode={isDemoMode}
+            />
+          ) : (
+            <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-6">
+              <h3 className="text-lg font-medium text-green-400 mb-4">Audio Frequency Recorder</h3>
+              <p className="text-sm text-gray-300 mb-4">
+                Record a short audio sample to analyze dominant frequencies.
+                This works more reliably than continuous analysis on mobile devices.
+              </p>
+              <AudioRecorder 
+                onFrequencyDetected={(freq) => {
+                  // Add the detected frequency to our local state
+                  setLocalDetectedFrequencies(prev => [...prev, freq]);
+                  
+                  // If it's an angelic frequency, show a toast notification
+                  if (isAngelicFrequency(freq.frequency)) {
+                    toast({
+                      title: "Angelic Frequency Detected!",
+                      description: `Detected ${freq.frequency}Hz - This is an angelic frequency!`,
+                      variant: "success",
+                    });
+                  } else {
+                    toast({
+                      title: "Frequency Detected",
+                      description: `Detected ${freq.frequency}Hz`,
+                    });
+                  }
+                  
+                  console.log(`AudioRecorder detected frequency: ${freq.frequency}Hz`);
+                }}
+                minFrequency={settings.minFrequency}
+                maxFrequency={settings.maxFrequency}
+                sensitivity={settings.sensitivity}
+              />
+            </div>
+          )}
         </div>
 
         <FrequencyPlayer
