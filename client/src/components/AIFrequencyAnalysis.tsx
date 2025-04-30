@@ -3,7 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Textarea } from '@/components/ui/textarea';
 import { DominantFrequency } from '@/hooks/useAudioAnalyzer';
-import { DetectedFrequency } from '@/shared/schema';
+import { DetectedFrequency } from "@shared/schema";
 import { apiRequest } from '@/lib/queryClient';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Brain } from 'lucide-react';
