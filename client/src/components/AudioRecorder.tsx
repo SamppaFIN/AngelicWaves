@@ -386,7 +386,7 @@ export function AudioRecorder({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast, isBatchProcessing, currentBatchCycle]);
+  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast, isBatchProcessing, currentBatchCycle, processBatchCycle]);
   
   // Analyze the recorded audio clip using AI
   const analyzeRecordingAI = useCallback(() => {
