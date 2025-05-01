@@ -74,6 +74,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         validatedData.analysis = generateAnalysis(typedFrequencies);
       }
       
+      // Check if this report should be public and shareable
+      if (validatedData.isPublic === 1) {
+        // If no share ID is provided, one will be generated in the storage layer
+        console.log("Creating shareable report");
+      }
+      
       const report = await storage.saveFrequencyReport(validatedData);
       res.status(201).json(report);
     } catch (error) {
@@ -91,6 +97,27 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(reports);
     } catch (error) {
       res.status(500).json({ message: "Failed to retrieve frequency reports" });
+    }
+  });
+  
+  // Endpoint to get a specific shared report by shareId
+  app.get("/api/frequency-reports/shared/:shareId", async (req, res) => {
+    try {
+      const { shareId } = req.params;
+      
+      if (!shareId) {
+        return res.status(400).json({ message: "Share ID is required" });
+      }
+      
+      const report = await storage.getFrequencyReportByShareId(shareId);
+      
+      if (!report) {
+        return res.status(404).json({ message: "Shared report not found or not public" });
+      }
+      
+      res.json(report);
+    } catch (error) {
+      res.status(500).json({ message: "Failed to retrieve shared report" });
     }
   });
 
