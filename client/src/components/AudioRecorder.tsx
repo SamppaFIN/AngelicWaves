@@ -10,13 +10,15 @@ interface AudioRecorderProps {
   minFrequency: number;
   maxFrequency: number;
   sensitivity: 'Low' | 'Medium' | 'High';
+  onGenerateAiReport?: () => void; // Optional callback to generate AI report
 }
 
 export function AudioRecorder({ 
   onFrequencyDetected, 
   minFrequency,
   maxFrequency,
-  sensitivity 
+  sensitivity,
+  onGenerateAiReport 
 }: AudioRecorderProps) {
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
