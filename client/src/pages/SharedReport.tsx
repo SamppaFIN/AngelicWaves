@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useParams, Link as WouterLink } from "wouter";
-import { FrequencyReport } from "@shared/schema";
+import { FrequencyReport, DetectedFrequency } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDetectedFrequenciesSummary } from "@/lib/frequencyAnalysis";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -18,7 +18,18 @@ export default function SharedReport() {
     setShareUrl(window.location.href);
   }, []);
   
-  const { data: report, isLoading, error } = useQuery<FrequencyReport>({
+  // Use a more relaxed type to avoid TypeScript errors
+  interface SharedReportResponse {
+    id: number;
+    detectedFrequencies: any; // Using any to handle both string and array
+    analysis: string;
+    userNotes: string | null;
+    createdAt: string | Date;
+    shareId: string | null;
+    isPublic: number | null;
+  }
+  
+  const { data: report, isLoading, error } = useQuery<SharedReportResponse>({
     queryKey: [`/api/frequency-reports/shared/${shareId}`],
     enabled: !!shareId,
   });
@@ -125,14 +136,23 @@ export default function SharedReport() {
     );
   }
   
-  // Parse the report data
-  const frequencyData = report.data as unknown as { 
-    detectedFrequencies: { frequency: number; duration: number; timestamp: number }[]; 
-    analysis: string;
-    userNotes?: string;
-  };
+  // Parse the detected frequencies from the report
+  // The server returns an array of DetectedFrequency objects, but it might be stringified
+  let detectedFrequencies: DetectedFrequency[] = [];
+  try {
+    // Handle both cases: already parsed array or stringified JSON
+    if (typeof report.detectedFrequencies === 'string') {
+      detectedFrequencies = JSON.parse(report.detectedFrequencies);
+    } else {
+      // It's already an array of DetectedFrequency objects
+      detectedFrequencies = report.detectedFrequencies as unknown as DetectedFrequency[];
+    }
+  } catch (e) {
+    console.error("Error parsing detectedFrequencies:", e);
+  }
   
-  const { detectedFrequencies, analysis, userNotes } = frequencyData;
+  const analysis = report.analysis;
+  const userNotes = report.userNotes;
   
   const formattedDate = new Date(report.createdAt).toLocaleDateString('en-US', {
     year: 'numeric',
