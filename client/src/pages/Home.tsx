@@ -109,11 +109,24 @@ export default function Home() {
   }, []);
 
   const handleSaveReport = async (report: AnalysisReportData) => {
-    await apiRequest("/api/frequency-reports", {
-      method: "POST",
-      body: JSON.stringify(report)
-    });
-    resetDetectedFrequencies();
+    try {
+      // Check if the report has isPublic set, otherwise default to 0 (private)
+      const reportData = {
+        ...report,
+        isPublic: report.isPublic !== undefined ? report.isPublic : 0
+      };
+      
+      await apiRequest("/api/frequency-reports", {
+        method: "POST",
+        body: JSON.stringify(reportData)
+      });
+      
+      resetDetectedFrequencies();
+      return true;
+    } catch (error) {
+      console.error("Error saving report:", error);
+      return false;
+    }
   };
   
   // Handler for when AI generates insights
@@ -281,7 +294,8 @@ export default function Home() {
                     toast({
                       title: "Angelic Frequency Detected!",
                       description: `Detected ${freq.frequency}Hz - This is an angelic frequency!`,
-                      variant: "success",
+                      variant: "default",
+                      className: "bg-green-500 text-white",
                     });
                   } else {
                     toast({
