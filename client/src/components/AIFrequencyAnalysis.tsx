@@ -151,7 +151,7 @@ export function AIFrequencyAnalysis({
           <Button 
             onClick={generateAiInsight} 
             disabled={isLoading}
-            className="bg-green-600 hover:bg-green-700 text-white self-start"
+            className="bg-green-600 hover:bg-green-700 text-white self-start ai-analysis-generate-btn"
           >
             {isLoading ? (
               <>

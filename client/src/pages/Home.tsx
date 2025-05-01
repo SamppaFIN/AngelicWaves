@@ -309,6 +309,14 @@ export default function Home() {
                 minFrequency={settings.minFrequency}
                 maxFrequency={settings.maxFrequency}
                 sensitivity={settings.sensitivity}
+                onGenerateAiReport={() => {
+                  // Get a reference to the AIFrequencyAnalysis component and trigger report generation
+                  console.log("Auto-generating AI report after frequency detection");
+                  const aiAnalysisButton = document.querySelector('.ai-analysis-generate-btn');
+                  if (aiAnalysisButton && aiAnalysisButton instanceof HTMLButtonElement && !aiAnalysisButton.disabled) {
+                    aiAnalysisButton.click();
+                  }
+                }}
               />
             </div>
           )}
