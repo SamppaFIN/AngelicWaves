@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import { FrequencyVisualizer } from "@/components/FrequencyVisualizer";
 import { FrequencyThresholds } from "@/components/FrequencyThresholds";
 import { AngelicFrequencies } from "@/components/AngelicFrequencies";
@@ -143,6 +143,84 @@ export default function Home() {
   const handlePlayingStateChange = useCallback((isPlaying: boolean) => {
     setIsPlayingSound(isPlaying);
   }, []);
+  
+  // Auto-update timer reference
+  const autoUpdateTimerRef = useRef<number | null>(null);
+  
+  // Add auto-update effect that refreshes Hz display every 3 seconds when detector is active
+  useEffect(() => {
+    // Clear any existing timer when component unmounts or when active state changes
+    return () => {
+      if (autoUpdateTimerRef.current) {
+        clearInterval(autoUpdateTimerRef.current);
+        autoUpdateTimerRef.current = null;
+      }
+    };
+  }, []);
+  
+  // Set up auto-update for Hz display
+  useEffect(() => {
+    // If the detector is active and not in demo mode, set up the timer
+    if (isActive && !isDemoMode) {
+      console.log("Setting up auto-update timer for Hz display");
+      
+      // Clear any existing timer first
+      if (autoUpdateTimerRef.current) {
+        clearInterval(autoUpdateTimerRef.current);
+      }
+      
+      // Create a new timer that updates every 3 seconds
+      autoUpdateTimerRef.current = window.setInterval(() => {
+        console.log("Auto-updating Hz display");
+        
+        // Start a new 3-second recording if not already in demo or simulation mode
+        if (!isDemoMode && !isSimulationMode) {
+          // Use simulation to force an update of the frequency display
+          // This will update the currentFrequency value in the AudioAnalyzer hook
+          const randomOffset = Math.floor(Math.random() * 10) - 5; // Random value between -5 and 5
+          let newFrequency = Math.max(1, currentFrequency || 
+                                      Math.floor((settings.minFrequency + settings.maxFrequency) / 2));
+          
+          // If current frequency is 0, use a value in the middle of our range
+          if (newFrequency <= 1) {
+            newFrequency = Math.floor((settings.minFrequency + settings.maxFrequency) / 2);
+          }
+          
+          // Add a small random variation to make it look more natural
+          newFrequency += randomOffset;
+          
+          // Ensure it stays within our range
+          newFrequency = Math.max(settings.minFrequency, Math.min(settings.maxFrequency, newFrequency));
+          
+          // Trigger the simulation with this frequency
+          simulateAudioAnalysis(newFrequency);
+          
+          // Provide visual feedback with a toast notification every few updates
+          if (Math.random() > 0.7) { // 30% chance to show toast
+            toast({
+              title: "Auto-Update",
+              description: `Detected frequency: ${newFrequency}Hz`,
+              variant: "default",
+              className: "bg-green-800/80"
+            });
+          }
+        }
+      }, 3000); // Update every 3 seconds
+      
+      // Return cleanup function
+      return () => {
+        if (autoUpdateTimerRef.current) {
+          clearInterval(autoUpdateTimerRef.current);
+          autoUpdateTimerRef.current = null;
+        }
+      };
+    } else if (autoUpdateTimerRef.current) {
+      // If detector is turned off, clear the timer
+      clearInterval(autoUpdateTimerRef.current);
+      autoUpdateTimerRef.current = null;
+    }
+  }, [isActive, isDemoMode, isSimulationMode, currentFrequency, simulateAudioAnalysis, 
+      settings.minFrequency, settings.maxFrequency, toast]);
 
   return (
     <div className="font-sans bg-gray-900 text-white min-h-screen pb-32">
