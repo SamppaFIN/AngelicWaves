@@ -226,6 +226,14 @@ export function AudioRecorder({
           // Add to the detected frequencies
           onFrequencyDetected(detectedFreq);
           
+          // Auto-generate AI report if a callback was provided
+          if (onGenerateAiReport) {
+            // Short delay to allow the frequency to be processed first
+            setTimeout(() => {
+              onGenerateAiReport();
+            }, 300);
+          }
+          
           setRecordingStatus(`Detected frequency: ${frequency}Hz ${isAngelic ? '(Angelic)' : ''}`);
         } else {
           setRecordingStatus(`Detected frequency ${frequency}Hz is outside target range`);
@@ -251,7 +259,7 @@ export function AudioRecorder({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, toast]);
+  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast]);
   
   // Play back the recorded audio
   const playRecording = useCallback(() => {
