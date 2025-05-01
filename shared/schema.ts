@@ -14,6 +14,8 @@ export const frequencyReports = pgTable("frequency_reports", {
   analysis: text("analysis").notNull(),
   userNotes: text("user_notes"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
+  shareId: text("share_id").unique(),
+  isPublic: integer("is_public").default(0),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -25,6 +27,8 @@ export const insertFrequencyReportSchema = createInsertSchema(frequencyReports).
   detectedFrequencies: true,
   analysis: true,
   userNotes: true,
+  shareId: true,
+  isPublic: true,
 });
 
 export interface DetectedFrequency {

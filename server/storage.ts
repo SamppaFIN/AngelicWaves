@@ -14,6 +14,7 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   saveFrequencyReport(report: InsertFrequencyReport): Promise<FrequencyReport>;
   getFrequencyReports(): Promise<FrequencyReport[]>;
+  getFrequencyReportByShareId(shareId: string): Promise<FrequencyReport | undefined>;
 }
 
 export class MemStorage implements IStorage {
@@ -55,17 +56,39 @@ export class MemStorage implements IStorage {
       ? report.detectedFrequencies as DetectedFrequency[]
       : [];
     
+    // Generate a random shareId if not provided and isPublic is true
+    let shareId = report.shareId || null;
+    const isPublic = report.isPublic === 1 ? 1 : 0;
+    
+    if (isPublic === 1 && !shareId) {
+      // Generate a random 8-character alphanumeric shareId
+      shareId = Math.random().toString(36).substring(2, 10);
+      
+      // Ensure uniqueness by checking if it already exists
+      while (Array.from(this.frequencyReports.values()).some(r => r.shareId === shareId)) {
+        shareId = Math.random().toString(36).substring(2, 10);
+      }
+    }
+    
     // Create properly typed frequency report
     const frequencyReport: FrequencyReport = { 
       id,
       detectedFrequencies,
       analysis: report.analysis || "",
       userNotes: report.userNotes || null,
-      createdAt: now 
+      createdAt: now,
+      shareId,
+      isPublic
     };
     
     this.frequencyReports.set(id, frequencyReport);
     return frequencyReport;
+  }
+  
+  async getFrequencyReportByShareId(shareId: string): Promise<FrequencyReport | undefined> {
+    return Array.from(this.frequencyReports.values()).find(
+      (report) => report.shareId === shareId && report.isPublic === 1
+    );
   }
 
   async getFrequencyReports(): Promise<FrequencyReport[]> {
