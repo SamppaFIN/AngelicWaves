@@ -49,6 +49,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   // New state for frequency spectrum analysis
   const [frequencySpectrum, setFrequencySpectrum] = useState<Uint8Array | null>(null);
   const [dominantFrequencies, setDominantFrequencies] = useState<DominantFrequency[]>([]);
+  // Add auto-recording state
+  const [isAutoRecording, setIsAutoRecording] = useState(false);
+  const [lastRecordingTime, setLastRecordingTime] = useState(0);
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
@@ -57,6 +60,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const animationFrameRef = useRef<number | null>(null);
   const lastDetectedFrequencyRef = useRef<number>(0);
   const frequencyStartTimeRef = useRef<number>(0);
+  const autoRecordTimerRef = useRef<number | null>(null);
 
   // Convert sensitivity setting to FFT size
   const getFftSize = useCallback(() => {
