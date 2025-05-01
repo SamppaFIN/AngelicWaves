@@ -25,6 +25,9 @@ export function AudioRecorder({
   const [recordingBlob, setRecordingBlob] = useState<Blob | null>(null);
   const [recordingDuration, setRecordingDuration] = useState(0);
   const [recordingStatus, setRecordingStatus] = useState('');
+  const [isBatchProcessing, setIsBatchProcessing] = useState(false);
+  const [currentBatchCycle, setCurrentBatchCycle] = useState(0);
+  const [lastDetectedFrequency, setLastDetectedFrequency] = useState<number | null>(null);
   const { toast } = useToast();
 
   // Refs for recording state
@@ -143,11 +146,68 @@ export function AudioRecorder({
     }
   }, []);
   
+  // Start a batch of recordings (runs 5 cycles)
+  const startBatchRecording = useCallback(async () => {
+    // If already batch processing, don't start another
+    if (isBatchProcessing) return;
+    
+    setIsBatchProcessing(true);
+    setCurrentBatchCycle(0);
+    
+    // Show a toast notification
+    toast({
+      title: "Automated Analysis Started",
+      description: "Running 5 cycles of recording and AI analysis",
+      className: "bg-indigo-600 text-white",
+    });
+    
+    // Start the first cycle
+    await startRecording();
+  }, [isBatchProcessing, toast, startRecording]);
+  
+  // Process the next batch recording cycle if needed
+  const processBatchCycle = useCallback(async (detectedFreq: DetectedFrequency) => {
+    if (!isBatchProcessing) return;
+    
+    // Update the last detected frequency for display
+    setLastDetectedFrequency(detectedFreq.frequency);
+    
+    // Update the current cycle count
+    const nextCycle = currentBatchCycle + 1;
+    setCurrentBatchCycle(nextCycle);
+    
+    console.log(`Batch processing: completed cycle ${nextCycle} of 5`);
+    
+    // If we've completed 5 cycles, stop the batch processing
+    if (nextCycle >= 5) {
+      console.log("Batch processing complete after 5 cycles");
+      setIsBatchProcessing(false);
+      return;
+    }
+    
+    // Otherwise, wait a short time and start the next recording
+    setTimeout(async () => {
+      if (streamRef.current) {
+        // If we still have a stream, stop it first
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      
+      // Start the next recording cycle
+      await startRecording();
+    }, 1000);
+  }, [isBatchProcessing, currentBatchCycle, startRecording, streamRef]);
+  
   // Analyze the recorded audio blob
+  // Add processBatchCycle to the dependencies of analyzeRecordedAudio
   const analyzeRecordedAudio = useCallback(async (audioBlob: Blob, duration: number) => {
     try {
       setIsAnalyzing(true);
       setRecordingStatus('Analyzing audio...');
+      
+      if (isBatchProcessing) {
+        setRecordingStatus(`Processing cycle ${currentBatchCycle + 1} of 5...`);
+      }
       
       // Create an audio context
       const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
@@ -245,12 +305,23 @@ export function AudioRecorder({
         // Add to the detected frequencies
         onFrequencyDetected(detectedFreq);
         
+        // Update the last detected frequency for display
+        setLastDetectedFrequency(adjustedFrequency);
+        
         // Auto-generate AI report if a callback was provided
         if (onGenerateAiReport) {
           // Short delay to allow the frequency to be processed first
           setTimeout(() => {
             onGenerateAiReport();
           }, 300);
+        }
+        
+        // If we're in batch processing mode, continue to the next cycle
+        if (isBatchProcessing) {
+          // Short delay to allow the UI to update
+          setTimeout(() => {
+            processBatchCycle(detectedFreq);
+          }, 500);
         }
         
         // Use the recording status to indicate confidence level based on amplitude
@@ -272,11 +343,22 @@ export function AudioRecorder({
         
         onFrequencyDetected(detectedFreq);
         
+        // Update the last detected frequency for display
+        setLastDetectedFrequency(defaultFrequency);
+        
         // Auto-generate AI report even for default frequency
         if (onGenerateAiReport) {
           setTimeout(() => {
             onGenerateAiReport();
           }, 300);
+        }
+        
+        // If we're in batch processing mode, continue to the next cycle
+        if (isBatchProcessing) {
+          // Short delay to allow the UI to update
+          setTimeout(() => {
+            processBatchCycle(detectedFreq);
+          }, 500);
         }
         
         setRecordingStatus(`Very quiet recording, using reference frequency: ${defaultFrequency}Hz`);
@@ -304,7 +386,7 @@ export function AudioRecorder({
     } finally {
       setIsAnalyzing(false);
     }
-  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast]);
+  }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast, isBatchProcessing, currentBatchCycle]);
   
   // Analyze the recorded audio clip using AI
   const analyzeRecordingAI = useCallback(() => {
@@ -326,8 +408,8 @@ export function AudioRecorder({
     <div className="space-y-4">
       <div className="flex flex-col items-center space-y-2">
         <Button 
-          onClick={isRecording ? stopRecording : startRecording}
-          disabled={isAnalyzing}
+          onClick={isRecording ? stopRecording : startBatchRecording}
+          disabled={isAnalyzing || isBatchProcessing}
           className={isRecording 
             ? "bg-red-600 hover:bg-red-700 text-white" 
             : "bg-green-600 hover:bg-green-700 text-white"}
@@ -343,15 +425,20 @@ export function AudioRecorder({
               <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               Analyzing...
             </>
+          ) : isBatchProcessing ? (
+            <>
+              <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+              Processing Cycle {currentBatchCycle}/5
+            </>
           ) : (
             <>
               <Mic className="mr-2 h-5 w-5" />
-              Start Recording (3 seconds)
+              Start 5-Cycle Analysis
             </>
           )}
         </Button>
         
-        {recordingBlob && (
+        {recordingBlob && !isBatchProcessing && (
           <Button 
             onClick={analyzeRecordingAI}
             variant="outline"
@@ -365,10 +452,19 @@ export function AudioRecorder({
       </div>
       
       <div className="text-center text-sm text-gray-400">
-        {recordingStatus || "Press the button to start recording and analyzing audio"}
+        {recordingStatus || "Press the button to start a 5-cycle recording and analysis"}
       </div>
       
-      {recordingBlob && (
+      {isBatchProcessing && (
+        <div className="text-center font-medium text-green-500">
+          Detected frequency: {lastDetectedFrequency ? `${lastDetectedFrequency.toFixed(1)}Hz` : "Waiting..."}
+          <div className="mt-1 text-xs text-gray-400">
+            Batch progress: {currentBatchCycle}/5 cycles completed
+          </div>
+        </div>
+      )}
+      
+      {recordingBlob && !isBatchProcessing && (
         <div className="text-center text-sm text-gray-400">
           Recording duration: {(recordingDuration / 1000).toFixed(1)} seconds
         </div>
