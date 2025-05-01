@@ -15,4 +15,6 @@ export interface AnalysisReportData {
   detectedFrequencies: DetectedFrequency[];
   analysis: string;
   userNotes?: string;
+  isPublic?: number; // 0 = private (default), 1 = public
+  shareId?: string;  // Optional, will be generated on the server if not provided
 }

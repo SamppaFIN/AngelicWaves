@@ -13,7 +13,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 
 interface AnalysisPanelProps {
   detectedFrequencies: DetectedFrequency[];
-  onSaveReport: (report: AnalysisReportData) => Promise<void>;
+  onSaveReport: (report: AnalysisReportData) => Promise<boolean | void>;
 }
 
 export function AnalysisPanel({ detectedFrequencies, onSaveReport }: AnalysisPanelProps) {
