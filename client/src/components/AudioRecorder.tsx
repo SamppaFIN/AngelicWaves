@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
-import { Mic, Loader2, StopCircle, Play } from 'lucide-react';
+import { Mic, Loader2, StopCircle, Sparkles } from 'lucide-react';
 import { isAngelicFrequency } from '@/lib/frequencyAnalysis';
 import { DetectedFrequency } from '@shared/schema';
 import { useToast } from '@/hooks/use-toast';
@@ -261,14 +261,21 @@ export function AudioRecorder({
     }
   }, [getSensitivityValue, minFrequency, maxFrequency, onFrequencyDetected, onGenerateAiReport, toast]);
   
-  // Play back the recorded audio
-  const playRecording = useCallback(() => {
-    if (recordingBlob) {
-      const url = URL.createObjectURL(recordingBlob);
-      const audio = new Audio(url);
-      audio.play();
+  // Analyze the recorded audio clip using AI
+  const analyzeRecordingAI = useCallback(() => {
+    if (recordingBlob && onGenerateAiReport) {
+      // Trigger AI analysis of the recording
+      console.log("Triggering AI analysis of the recorded audio clip");
+      onGenerateAiReport();
+      
+      // Show toast notification
+      toast({
+        title: "Analyzing Recording",
+        description: "Generating AI insights for your recorded frequency.",
+        className: "bg-blue-600 text-white",
+      });
     }
-  }, [recordingBlob]);
+  }, [recordingBlob, onGenerateAiReport, toast]);
   
   return (
     <div className="space-y-4">
@@ -301,13 +308,13 @@ export function AudioRecorder({
         
         {recordingBlob && (
           <Button 
-            onClick={playRecording}
+            onClick={analyzeRecordingAI}
             variant="outline"
             size="sm"
-            className="mt-2"
+            className="mt-2 bg-blue-600 hover:bg-blue-700 text-white"
           >
-            <Play className="mr-1 h-4 w-4" />
-            Play Recording
+            <Sparkles className="mr-1 h-4 w-4" />
+            Analyze Recording
           </Button>
         )}
       </div>
