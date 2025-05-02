@@ -3,20 +3,15 @@ import { FrequencyVisualizer } from "@/components/FrequencyVisualizer";
 import { FrequencyThresholds } from "@/components/FrequencyThresholds";
 import { AngelicFrequencies } from "@/components/AngelicFrequencies";
 import { FrequencyHistory } from "@/components/FrequencyHistory";
-import { AnalysisPanel } from "@/components/AnalysisPanel";
 import { MicrophonePermission } from "@/components/MicrophonePermission";
 import { FrequencyExplorerMascot } from "@/components/FrequencyExplorerMascot";
 import { FrequencyPlayer } from "@/components/FrequencyPlayer";
 import { FrequencyMeterPanel } from "@/components/FrequencyMeterPanel";
 import { DemoFrequencySlider } from "@/components/DemoFrequencySlider";
-import { AngelicFrequencyPresentation } from "@/components/AngelicFrequencyPresentation";
-import { AIFrequencyAnalysis } from "@/components/AIFrequencyAnalysis";
-import { AudioRecorder } from "@/components/AudioRecorder";
 import { useAudioAnalyzer } from "@/hooks/useAudioAnalyzer";
 import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
 import { Switch } from "@/components/ui/switch";
-import { FrequencySettings, AnalysisReportData } from "@/lib/types";
-import { apiRequest } from "@/lib/queryClient";
+import { FrequencySettings } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
 import { playActivationSound, playDeactivationSound } from "@/lib/soundEffects";
 import { DetectedFrequency } from "@shared/schema";
@@ -108,32 +103,10 @@ export default function Home() {
     setSettings(newSettings);
   }, []);
 
-  const handleSaveReport = async (report: AnalysisReportData) => {
-    try {
-      // Check if the report has isPublic set, otherwise default to 0 (private)
-      const reportData = {
-        ...report,
-        isPublic: report.isPublic !== undefined ? report.isPublic : 0
-      };
-      
-      await apiRequest("/api/frequency-reports", {
-        method: "POST",
-        body: JSON.stringify(reportData)
-      });
-      
-      resetDetectedFrequencies();
-      return true;
-    } catch (error) {
-      console.error("Error saving report:", error);
-      return false;
-    }
-  };
-  
-  // Handler for when AI generates insights
-  const [aiInsight, setAiInsight] = useState<string | null>(null);
-  const handleAiInsightGenerated = useCallback((insight: string) => {
-    setAiInsight(insight);
-  }, []);
+  // Simplified frequency handling
+  const handleResetFrequencies = useCallback(() => {
+    resetDetectedFrequencies();
+  }, [resetDetectedFrequencies]);
   
   const handleFrequencyPlay = useCallback((frequency: number) => {
     // This function is called when a frequency is played
@@ -347,57 +320,13 @@ export default function Home() {
             onSettingsChange={handleSettingsChange}
           />
           
-          {isDemoMode ? (
-            <DemoFrequencySlider
-              minFrequency={settings.minFrequency}
-              maxFrequency={settings.maxFrequency}
-              demoFrequency={demoFrequency}
-              onDemoFrequencyChange={setDemoFrequency}
-              isDemoMode={isDemoMode}
-            />
-          ) : (
-            <div className="bg-gray-800/70 border border-gray-700 rounded-lg p-6">
-              <h3 className="text-lg font-medium text-green-400 mb-4">Audio Frequency Recorder</h3>
-              <p className="text-sm text-gray-300 mb-4">
-                Record a short audio sample to analyze dominant frequencies.
-                This works more reliably than continuous analysis on mobile devices.
-              </p>
-              <AudioRecorder 
-                onFrequencyDetected={(freq) => {
-                  // Add the detected frequency to our local state
-                  setLocalDetectedFrequencies(prev => [...prev, freq]);
-                  
-                  // If it's an angelic frequency, show a toast notification
-                  if (isAngelicFrequency(freq.frequency)) {
-                    toast({
-                      title: "Angelic Frequency Detected!",
-                      description: `Detected ${freq.frequency}Hz - This is an angelic frequency!`,
-                      variant: "default",
-                      className: "bg-green-500 text-white",
-                    });
-                  } else {
-                    toast({
-                      title: "Frequency Detected",
-                      description: `Detected ${freq.frequency}Hz`,
-                    });
-                  }
-                  
-                  console.log(`AudioRecorder detected frequency: ${freq.frequency}Hz`);
-                }}
-                minFrequency={settings.minFrequency}
-                maxFrequency={settings.maxFrequency}
-                sensitivity={settings.sensitivity}
-                onGenerateAiReport={() => {
-                  // Get a reference to the AIFrequencyAnalysis component and trigger report generation
-                  console.log("Auto-generating AI report after frequency detection");
-                  const aiAnalysisButton = document.querySelector('.ai-analysis-generate-btn');
-                  if (aiAnalysisButton && aiAnalysisButton instanceof HTMLButtonElement && !aiAnalysisButton.disabled) {
-                    aiAnalysisButton.click();
-                  }
-                }}
-              />
-            </div>
-          )}
+          <DemoFrequencySlider
+            minFrequency={settings.minFrequency}
+            maxFrequency={settings.maxFrequency}
+            demoFrequency={demoFrequency}
+            onDemoFrequencyChange={setDemoFrequency}
+            isDemoMode={isDemoMode}
+          />
         </div>
 
         <FrequencyPlayer
@@ -405,30 +334,10 @@ export default function Home() {
           onPlayingStateChange={handlePlayingStateChange}
         />
         
-        <AngelicFrequencyPresentation
-          currentFrequency={currentFrequency}
-          isActive={isActive}
-          detectedFrequencies={detectedFrequencies}
-        />
-        
         <AngelicFrequencies />
         
         {showHistory && <FrequencyHistory />}
-        
-        <div className="mt-10 mb-6">
-          <h2 className="text-2xl font-bold text-green-400 mb-4">AI-Powered Frequency Analysis</h2>
-          <AIFrequencyAnalysis 
-            detectedFrequencies={detectedFrequencies}
-            dominantFrequencies={dominantFrequencies}
-            onAiInsightGenerated={handleAiInsightGenerated}
-          />
-        </div>
       </main>
-
-      <AnalysisPanel
-        detectedFrequencies={detectedFrequencies}
-        onSaveReport={handleSaveReport}
-      />
 
       <MicrophonePermission
         open={showPermissionModal}
