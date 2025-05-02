@@ -43,24 +43,83 @@ export function FrequencyExplorerMascot({
       if (isDemoMode) {
         setMascotMessage("This is an angelic frequency! Can you feel the vibration at 432Hz? Some say it resonates with the universe!");
       } else {
-        const messages = [
-          `Wow! We found an angelic frequency at ${Math.round(currentFrequency)}Hz! This is amazing!`,
-          `${Math.round(currentFrequency)}Hz detected! This frequency has special healing properties!`,
-          `Incredible! ${Math.round(currentFrequency)}Hz is a sacred frequency used in ancient healing!`
-        ];
+        // More detailed and varied angelic frequency messages
+        const roundedFreq = Math.round(currentFrequency);
+        let messages;
+        
+        // Custom messages based on which angelic frequency was detected
+        if (Math.abs(roundedFreq - 432) < 15) {
+          messages = [
+            `Wow! We found the sacred 432Hz frequency! This aligns with the heartbeat of the universe!`,
+            `432Hz detected! Did you know Mozart tuned his instruments to this exact frequency?`,
+            `Amazing! 432Hz is mathematically related to the Fibonacci sequence and sacred geometry!`,
+            `432Hz located! This frequency helps release emotional blockages and expand consciousness!`,
+            `We found Earth's natural tuning frequency - 432Hz! Feel how it resonates peacefully?`
+          ];
+        } else if (Math.abs(roundedFreq - 528) < 15) {
+          messages = [
+            `The Miracle frequency - 528Hz! It's known for DNA repair and transformation!`,
+            `528Hz detected! This is the exact frequency used to repair damaged DNA in scientific studies!`,
+            `The Love frequency - 528Hz! It's said to attract miracles and positive transformation!`,
+            `We found 528Hz! This frequency is mathematically significant in sacred structures worldwide!`,
+            `528Hz located! Ancient healing temples were designed to amplify this exact frequency!`
+          ];
+        } else if (Math.abs(roundedFreq - 639) < 15) {
+          messages = [
+            `639Hz detected! This frequency harmonizes relationships and encourages clear communication!`,
+            `We found the 639Hz frequency! It's associated with the heart chakra and emotional balance!`,
+            `639Hz located! Ancient monks used this tone to create harmony between mind and body!`,
+            `The Connection frequency - 639Hz! It helps balance love and understanding in relationships!`,
+            `639Hz discovered! This tone can help strengthen connections with others!`
+          ];
+        } else if (Math.abs(roundedFreq - 741) < 15) {
+          messages = [
+            `741Hz detected! This frequency helps with solving problems and expressing yourself!`,
+            `The Awakening frequency - 741Hz! It helps cleanse the body from toxins!`,
+            `741Hz located! This tone activates the third eye for intuition and expression!`,
+            `We found 741Hz! Sound healers use this to help people express their truth!`,
+            `741Hz discovered! This frequency can help clear your mind when feeling confused!`
+          ];
+        } else if (Math.abs(roundedFreq - 963) < 15) {
+          messages = [
+            `963Hz detected! This is connected to the light frequency and cosmic consciousness!`,
+            `The Frequency of Gods - 963Hz! It's said to connect us to the divine energy field!`,
+            `963Hz located! This tone awakens the pineal gland and cosmic awareness!`,
+            `We found 963Hz! Ancient temples were designed to channel this divine frequency!`,
+            `963Hz discovered! This is the highest frequency in the sacred Solfeggio scale!`
+          ];
+        } else {
+          // General angelic frequency messages
+          messages = [
+            `Wow! We found an angelic frequency at ${roundedFreq}Hz! This is amazing!`,
+            `${roundedFreq}Hz detected! This frequency has special healing properties!`,
+            `Incredible! ${roundedFreq}Hz is a sacred frequency used in ancient healing!`,
+            `${roundedFreq}Hz discovered! You've found a frequency that resonates with cosmic energy!`,
+            `We found a healing vibration at ${roundedFreq}Hz! These special frequencies appear throughout nature!`
+          ];
+        }
+        
         setMascotMessage(messages[Math.floor(Math.random() * messages.length)]);
       }
     } else {
       // When active but not detecting anything significant, make Echo bounce and encourage sound
       if (isActive && currentFrequency <= 0) {
         setMascotState('searching');
-        // Randomize encouragement messages for making noise
+        // Expanded encouragement messages for making noise
         const noiseMessages = [
           "Make some noise! Try humming, whistling, or clapping!",
           "I need sound to detect frequencies! Try speaking or singing!",
           "Try making different sounds - I'll analyze them for you!",
           "Louder please! I'm listening for special frequencies!",
-          "Talk, sing, or play some music - I'll detect the frequencies!"
+          "Talk, sing, or play some music - I'll detect the frequencies!",
+          "Try whistling a tune! Different notes have different frequencies!",
+          "How about humming at different pitches? I'll track the frequencies!",
+          "Can you try tapping on different surfaces? Each creates unique frequencies!",
+          "Ring a bell or strike a glass if you have one nearby!",
+          "Try playing musical tones from 432Hz to 963Hz for best results!",
+          "I'm listening for special vibrations! Any sound will help me analyze frequencies!",
+          "Let's find some angelic frequencies! Try making gentle humming sounds...",
+          "I need audio input to find special frequencies! Anything works - even finger snaps!"
         ];
         setMascotMessage(noiseMessages[Math.floor(Math.random() * noiseMessages.length)]);
       } 
@@ -69,15 +128,39 @@ export function FrequencyExplorerMascot({
         // Make Echo bounce when detecting frequencies
         setMascotState('dancing');
         
+        const roundedFreq = Math.round(currentFrequency);
+        // Expanded messages about detected frequencies
         if (Math.abs(currentFrequency - 432) < 15 || 
             Math.abs(currentFrequency - 528) < 15 ||
             Math.abs(currentFrequency - 639) < 15 || 
             Math.abs(currentFrequency - 741) < 15 ||
             Math.abs(currentFrequency - 963) < 15) {
-          // Getting close to an angelic frequency
-          setMascotMessage(`Ooh! ${Math.round(currentFrequency)}Hz is very close to an angelic frequency! Keep going!`);
+          // Getting close to an angelic frequency - more varied messages
+          const closeMessages = [
+            `Ooh! ${roundedFreq}Hz is very close to an angelic frequency! Keep going!`,
+            `Almost there! ${roundedFreq}Hz is near a sacred frequency! Try adjusting a bit!`,
+            `${roundedFreq}Hz detected! You're very close to one of the healing frequencies!`,
+            `So close! ${roundedFreq}Hz is just off an angelic tone! Try again!`,
+            `Nearly perfect! ${roundedFreq}Hz is approaching a frequency used in ancient healing!`
+          ];
+          setMascotMessage(closeMessages[Math.floor(Math.random() * closeMessages.length)]);
         } else {
-          setMascotMessage(`I'm detecting ${Math.round(currentFrequency)}Hz. Let's keep exploring!`);
+          // Regular frequency detection - more informative messages
+          const rangeDescription = currentFrequency < 100 ? "low" : 
+                                 (currentFrequency < 500 ? "mid" : "high");
+          
+          const frequencyMessages = [
+            `I'm detecting ${roundedFreq}Hz. Let's keep exploring!`,
+            `${roundedFreq}Hz found! This is in the ${rangeDescription} frequency range.`,
+            `Interesting! ${roundedFreq}Hz detected. Every sound has its own unique frequency signature!`,
+            `${roundedFreq}Hz registered! Different materials resonate with different frequencies.`,
+            `I'm picking up ${roundedFreq}Hz. Human hearing ranges from 20Hz to 20,000Hz!`,
+            `${roundedFreq}Hz found! Try making a slightly ${currentFrequency < 500 ? "higher" : "lower"} pitch sound now!`,
+            `That's ${roundedFreq}Hz! ${currentFrequency > 600 && currentFrequency < 900 ? "You're in the angelic frequency range!" : "Keep exploring different sounds!"}`,
+            `${roundedFreq}Hz detected! Did you know different emotions respond to different frequencies?`,
+            `Interesting vibration at ${roundedFreq}Hz! Sound travels at 343 meters per second in air!`
+          ];
+          setMascotMessage(frequencyMessages[Math.floor(Math.random() * frequencyMessages.length)]);
         }
       } else {
         setMascotState('searching');
@@ -94,7 +177,7 @@ export function FrequencyExplorerMascot({
     if (!isActive || currentFrequency > 0) {
       timer = setTimeout(() => {
         setShowMessage(false);
-      }, 5000); // Hide message after 5 seconds
+      }, 8000); // Hide message after 8 seconds for more reading time
     }
     
     return () => clearTimeout(timer);
@@ -102,7 +185,7 @@ export function FrequencyExplorerMascot({
   
   // Show message on mascot click with fun random facts
   const handleMascotClick = () => {
-    // Fun facts about frequencies and sound
+    // Fun facts and stories about frequencies and sound
     const funFacts = [
       "Did you know? The 432Hz frequency is said to be mathematically consistent with the patterns of the universe!",
       "Sound healing has been used for thousands of years in various cultures!",
@@ -113,7 +196,38 @@ export function FrequencyExplorerMascot({
       "The 639Hz frequency is associated with harmonious relationships and connection!",
       "Try the sequence 432 → 528 → 639 → 741 → 963 for a full frequency journey!",
       "The sounds we hear can affect our brainwaves and change our mood and energy levels!",
-      "I'm Echo, your frequency guide! I can detect sounds from 20Hz to 20,000Hz - the human hearing range!"
+      "I'm Echo, your frequency guide! I can detect sounds from 20Hz to 20,000Hz - the human hearing range!",
+      
+      // Historical stories
+      "In 1939, before WWII began, a movement tried to change the standard tuning from 440Hz to 432Hz, believing it would create more peaceful harmony!",
+      "Legend has it that Tibetan monks could break down stone walls using precise frequency chanting!",
+      "In the 1960s, Dr. Hans Jenny showed that sounds could create geometric patterns in materials - called Cymatics!",
+      "Ancient Egyptian temples were designed with acoustic properties to amplify specific healing frequencies!",
+      
+      // Scientific facts
+      "In hospitals, music at 440Hz is used to reduce anxiety before surgery - it's scientifically proven to calm nerves!",
+      "Sound therapists use frequencies between 30Hz and 120Hz to help relieve chronic pain conditions!",
+      "NASA discovered that black holes emit sounds - the lowest B-flat ever detected, about 57 octaves below middle C!",
+      "When you hear music, your brain releases dopamine - the same chemical released when eating chocolate!",
+      "Each organ in your body resonates with a specific frequency. The heart is around 72Hz!",
+      
+      // Cultural stories
+      "In ancient China, precise 5-tone scales were composed to balance the five elements: water, fire, earth, metal and wood!",
+      "Native American healing ceremonies use specific drum frequencies - typically between 4-7Hz - to induce trance states!",
+      "In Islamic architecture, the muqarnas (honeycomb vaults) are designed to create specific frequency resonances for prayer!",
+      "The famous 'Om' chant frequency measures around 432Hz, connecting many spiritual practices!",
+      
+      // Phenomena stories
+      "Opera singers can shatter glass with their voice when they hit the resonant frequency of the glass - usually above 1000Hz!",
+      "The lowest note on a piano is 27.5Hz, but some pipe organs can play as low as 8Hz - so deep you feel it rather than hear it!",
+      "Whale songs can travel thousands of miles through ocean water because water conducts sound frequencies better than air!",
+      "Infrasound (below 20Hz) can cause feelings of anxiety and awe - some haunted locations have natural infrasound!",
+      
+      // Practical applications
+      "Ultrasound frequencies (above 20kHz) are used to clean jewelry by creating microscopic bubbles that remove dirt!",
+      "The beach has a naturally calming sound frequency range between 1-10Hz that helps synchronize our brainwaves!",
+      "Musicians tune to A=440Hz today, but Bach and Mozart composed for instruments tuned to A=432Hz!",
+      "Some farmers use specific sound frequencies to increase crop yields by up to 50%!"
     ];
     
     // Pick a random fact
@@ -122,7 +236,7 @@ export function FrequencyExplorerMascot({
     
     const timer = setTimeout(() => {
       setShowMessage(false);
-    }, 7000); // Longer display for fun facts
+    }, 12000); // Much longer display for fun facts and stories
     
     return () => clearTimeout(timer);
   };
@@ -131,9 +245,9 @@ export function FrequencyExplorerMascot({
     <div className="fixed bottom-16 right-4 flex items-end">
       {/* Speech bubble */}
       {showMessage && (
-        <div className="mb-2 mr-4 max-w-xs bg-white text-gray-800 p-3 rounded-lg rounded-br-none shadow-lg transition-opacity animate-fade-in">
-          <p className="text-sm">{mascotMessage}</p>
-          <div className="absolute right-0 bottom-0 w-4 h-4 bg-white transform translate-x-1/2 rotate-45"></div>
+        <div className="mb-2 mr-4 max-w-xs bg-white/95 text-gray-800 p-4 rounded-lg rounded-br-none shadow-xl transition-opacity animate-fade-in border border-green-300/40">
+          <p className="text-sm leading-relaxed">{mascotMessage}</p>
+          <div className="absolute right-0 bottom-0 w-4 h-4 bg-white border-r border-b border-green-300/40 transform translate-x-1/2 rotate-45"></div>
         </div>
       )}
       
