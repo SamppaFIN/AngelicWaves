@@ -254,21 +254,35 @@ export default function Home() {
         {/* Recording Loop Status */}
         {isRecordingLoop && (
           <div className="bg-green-800/40 p-4 rounded-lg mb-6 border border-green-500/30 shadow-lg">
-            <h3 className="text-green-400 font-medium flex items-center mb-3">
+            <h3 className="text-green-400 font-medium flex items-center mb-2">
               <span className="animate-pulse mr-2">⚡</span>
               Recording Loop Progress: Round {currentIteration}/{MAX_ITERATIONS}
             </h3>
             
+            {/* Debug information */}
+            <div className="text-xs text-green-200/80 mb-3">
+              Status: "{detectionStatus}" | Current Frequency: {currentFrequency}Hz
+            </div>
+            
             <div className="relative w-full h-2 bg-gray-700 rounded-full overflow-hidden mb-4">
               <div 
                 className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-300"
-                style={{ width: `${(currentIteration / MAX_ITERATIONS) * 100}%` }}
+                style={{ width: `${Math.max(0, (currentIteration / MAX_ITERATIONS) * 100)}%` }}
               />
+            </div>
+            
+            {/* Better labeling for the round indicator */}
+            <div className="flex justify-between text-xs text-green-300/60 mb-4">
+              <span>Round 1</span>
+              <span>Round {Math.ceil(MAX_ITERATIONS/2)}</span>
+              <span>Round {MAX_ITERATIONS}</span>
             </div>
             
             {iterationResults.length > 0 && (
               <div className="mt-2 text-sm text-gray-300">
-                <h4 className="font-medium text-white mb-1">Detected Frequencies:</h4>
+                <h4 className="font-medium text-white mb-1">
+                  Detected Frequencies: {iterationResults.length}/{MAX_ITERATIONS}
+                </h4>
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {iterationResults.map(result => (
                     <div 

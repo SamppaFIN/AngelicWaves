@@ -781,6 +781,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       console.log(`⚡⚡⚡ RECORDING ITERATION ${iterationNumber}/${MAX_ITERATIONS} STARTED ⚡⚡⚡`);
       console.log(`🎙️ Starting 1-second audio recording for iteration ${iterationNumber}...`);
       
+      // Force update the current iteration again to ensure UI is in sync
+      setCurrentIteration(iterationNumber);
+      
       // Create a timeout handler to prevent getting stuck
       let timeoutId: number | null = window.setTimeout(() => {
         console.log(`⏱️ TIMEOUT for iteration ${iterationNumber} - 3 seconds passed without completing analysis`);
@@ -1020,10 +1023,15 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         return;
       }
       
-      // Update UI to show current iteration
+      // Update UI to show current iteration - force immediately with ref
       console.log(`📊 Processing iteration ${iteration}/${MAX_ITERATIONS}`);
-      setCurrentIteration(iteration);
+      // First update the ref to ensure we always have the latest value
+      const iterationRef = { current: iteration };
+      setCurrentIteration(iterationRef.current);
+      // Update the status with the current iteration number
       setDetectionStatus(`Recording Loop - Round ${iteration}/${MAX_ITERATIONS}`);
+      // Debug logs to ensure it's updating properly
+      console.log(`🔢 ITERATION STATUS UPDATED: ${iteration}/${MAX_ITERATIONS}`);
       
       try {
         // Record and analyze for this iteration
