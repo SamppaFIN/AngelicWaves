@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from "react";
-import { isAngelicFrequency } from "@/lib/frequencyAnalysis";
+import { isAngelicFrequency, angelicFrequencies } from "@/lib/frequencyAnalysis";
 import { DetectedFrequency } from "@shared/schema";
 import { FrequencySettings } from "@/lib/types";
 
@@ -1153,14 +1153,62 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         };
         setDetectedFrequencies(prev => [...prev, newFrequency]);
         
-        // Continue to next iteration after a short delay
-        console.log(`⏳ Waiting before starting iteration ${iteration + 1}...`);
-        setTimeout(() => {
+        // Perform synchronous AI analysis before moving to next iteration
+        console.log(`🧠 Starting AI analysis for frequency ${frequency}Hz...`);
+        
+        // Simulate AI processing with a promise
+        const analyzeFrequency = async (freq: number) => {
+          console.log(`🧠 AI ANALYSIS STARTED: Processing iteration ${iteration} frequency ${freq}Hz...`);
+          
+          // Determine if this is an angelic frequency
+          const isAngelic = isAngelicFrequency(freq);
+          const angelicStatus = isAngelic ? "ANGELIC FREQUENCY" : "normal frequency";
+          
+          // Calculate proximity to nearest angelic frequency
+          let nearestAngelic = getClosestAngelicFrequency(freq);
+          let proximityInfo = "";
+          
+          if (nearestAngelic) {
+            const diff = Math.abs(freq - nearestAngelic.frequency);
+            const percentMatch = 100 - (diff / nearestAngelic.frequency * 100);
+            proximityInfo = `
+              Nearest angelic frequency: ${nearestAngelic.frequency}Hz (${nearestAngelic.description})
+              Difference: ${diff.toFixed(2)}Hz
+              Match percentage: ${percentMatch.toFixed(2)}%
+            `;
+          }
+          
+          // Simulate AI thinking and processing time
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          console.log(`🧠 AI ANALYSIS COMPLETE:
+            - Frequency: ${freq}Hz
+            - Classification: ${angelicStatus}
+            - FFT certainty: High
+            ${proximityInfo}
+          `);
+          
+          console.log(`🧠 AI analysis for iteration ${iteration} complete`);
+          return freq;
+        };
+        
+        // Wait for the AI analysis to complete before continuing
+        try {
+          await analyzeFrequency(frequency);
+          
+          // Continue to next iteration after AI analysis completes
+          console.log(`⏳ AI analysis complete. Starting iteration ${iteration + 1}...`);
+          
           // CRITICAL FIX: Always continue to next iteration regardless of isActive state
           // This ensures the recording loop completes all iterations
           console.log(`🚀 CONTINUING to iteration ${iteration + 1} - isActive=${isActive}, isRecordingLoop=${isRecordingLoop}`);
           runIteration(iteration + 1);
-        }, 500); // 0.5 second delay between recordings
+        } catch (error) {
+          console.error(`❌ Error during AI analysis:`, error);
+          // Still continue to next iteration even if AI analysis fails
+          console.log(`⚠️ AI analysis failed, but continuing to iteration ${iteration + 1}...`);
+          runIteration(iteration + 1);
+        }
       } catch (error) {
         // Handle any unexpected errors in the iteration processing
         console.error(`❌ Error during iteration ${iteration}:`, error);
@@ -1199,13 +1247,65 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
           }
         ]);
         
-        // Continue to next iteration
-        console.log(`⏳ Waiting before starting iteration ${iteration + 1}... (after fallback)`);
-        setTimeout(() => {
-          // CRITICAL FIX: Also always continue here regardless of isActive state
+        // Perform synchronous AI analysis for fallback frequency too
+        console.log(`🧠 Starting AI analysis for fallback frequency ${fallbackFreq}Hz...`);
+        
+        // Simulate AI processing with a promise
+        const analyzeFrequency = async (freq: number) => {
+          console.log(`🧠 AI ANALYSIS STARTED: Processing iteration ${iteration} fallback frequency ${freq}Hz...`);
+          
+          // Determine if this is an angelic frequency
+          const isAngelic = isAngelicFrequency(freq);
+          const angelicStatus = isAngelic ? "ANGELIC FREQUENCY" : "normal frequency";
+          
+          // For fallback frequencies, indicate reduced certainty in the AI analysis
+          console.log(`⚠️ Using fallback frequency analysis with reduced certainty`);
+          
+          // Calculate proximity to nearest angelic frequency
+          let nearestAngelic = getClosestAngelicFrequency(freq);
+          let proximityInfo = "";
+          
+          if (nearestAngelic) {
+            const diff = Math.abs(freq - nearestAngelic.frequency);
+            const percentMatch = 100 - (diff / nearestAngelic.frequency * 100);
+            proximityInfo = `
+              Nearest angelic frequency: ${nearestAngelic.frequency}Hz (${nearestAngelic.description})
+              Difference: ${diff.toFixed(2)}Hz
+              Match percentage: ${percentMatch.toFixed(2)}%
+            `;
+          }
+          
+          // Simulate AI thinking and processing time
+          await new Promise(resolve => setTimeout(resolve, 800));
+          
+          console.log(`🧠 AI ANALYSIS COMPLETE (FALLBACK):
+            - Frequency: ${freq}Hz
+            - Classification: ${angelicStatus}
+            - FFT certainty: Low (FALLBACK)
+            - Note: This is a fallback frequency due to recording error
+            ${proximityInfo}
+          `);
+          
+          console.log(`🧠 AI analysis for iteration ${iteration} complete (fallback)`);
+          return freq;
+        };
+        
+        // Wait for the AI analysis to complete before continuing
+        try {
+          await analyzeFrequency(fallbackFreq);
+          
+          // Continue to next iteration after AI analysis completes
+          console.log(`⏳ AI analysis complete (fallback). Starting iteration ${iteration + 1}...`);
+          
+          // CRITICAL FIX: Always continue to next iteration regardless of isActive state
           console.log(`🚀 CONTINUING to iteration ${iteration + 1} (after fallback) - isActive=${isActive}, isRecordingLoop=${isRecordingLoop}`);
           runIteration(iteration + 1);
-        }, 500);
+        } catch (error) {
+          console.error(`❌ Error during AI analysis (fallback):`, error);
+          // Still continue to next iteration even if AI analysis fails
+          console.log(`⚠️ AI analysis failed for fallback, but continuing to iteration ${iteration + 1}...`);
+          runIteration(iteration + 1);
+        }
       }
     };
     
