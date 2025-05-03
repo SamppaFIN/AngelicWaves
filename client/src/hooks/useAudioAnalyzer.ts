@@ -59,7 +59,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const [currentIteration, setCurrentIteration] = useState(0);
   const [iterationResults, setIterationResults] = useState<{iteration: number, frequency: number}[]>([]);
   const [lastRecordingTime, setLastRecordingTime] = useState(0);
-  const MAX_ITERATIONS = 15; // Number of iterations before auto-stopping
+  const MAX_ITERATIONS = 5; // Number of iterations before auto-stopping
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
