@@ -920,9 +920,37 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
             // If we didn't detect any frequency, generate a random one
             if (dominantFrequency === 0) {
               console.log(`⚠️ Iteration ${iterationNumber}: No dominant frequency detected, using random value`);
-              dominantFrequency = Math.round(
+              const randomFreq = Math.round(
                 Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
               );
+              console.log(`🎲 AI ANALYSIS: Generated random frequency ${randomFreq}Hz (no real signal detected)`);
+              dominantFrequency = randomFreq;
+            } else {
+              console.log(`🔊 AI ANALYSIS: Real frequency detected: ${dominantFrequency}Hz`);
+              
+              // Log all spectral data for AI analysis
+              let frequencyInfo = "";
+              if (analyzerRef.current) {
+                const sampleRate = audioContextRef.current?.sampleRate || 44100;
+                const bufferLength = analyzerRef.current.frequencyBinCount;
+                const binSize = (sampleRate / 2) / bufferLength;
+                
+                frequencyInfo = `
+                  Sample rate: ${sampleRate}Hz
+                  FFT size: ${analyzerRef.current.fftSize}
+                  Frequency resolution: ${binSize.toFixed(2)}Hz per bin
+                  Dominant frequency bin: ${Math.round(dominantFrequency / binSize)}
+                  Frequency calculation: bin ${Math.round(dominantFrequency / binSize)} × ${binSize.toFixed(2)}Hz = ${dominantFrequency}Hz
+                `;
+                
+                console.log(`🧠 AI SPECTRAL ANALYSIS: ${frequencyInfo}`);
+              }
+            }
+            
+            // Check if it's within our angelic frequencies range
+            const isAngelic = isAngelicFrequency(dominantFrequency);
+            if (isAngelic) {
+              console.log(`✨ AI ANALYSIS: ${dominantFrequency}Hz is an ANGELIC FREQUENCY!`);
             }
             
             // Recording complete
@@ -1014,9 +1042,59 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       if (iteration > MAX_ITERATIONS) {
         console.log(`✅ Recording loop complete! Max iterations (${MAX_ITERATIONS}) reached`);
         setIsRecordingLoop(false);
+        
+        // Calculate average frequency from all iterations
+        console.log(`🧮 ANALYZING FINAL RESULTS: Calculating average frequency from ${iterationResults.length} recordings`);
+        
+        // Get all valid frequencies (filter out any 0 values just in case)
+        let validFrequencies = [...iterationResults]
+          .filter(result => result.frequency > 0)
+          .map(result => result.frequency);
+        
+        // Calculate the average
+        const sum = validFrequencies.reduce((total, freq) => total + freq, 0);
+        const averageFrequency = Math.round(sum / validFrequencies.length);
+        
+        console.log(`🧮 FREQUENCY ANALYSIS:
+          - Total iterations: ${iterationResults.length}
+          - Valid frequencies: ${validFrequencies.length}
+          - Sum of all frequencies: ${sum}Hz
+          - Individual readings: ${validFrequencies.join(', ')}Hz
+          - Calculated average: ${averageFrequency}Hz
+        `);
+        
+        // Check if we have a valid average
+        if (averageFrequency > 0) {
+          console.log(`📊 FINAL RESULT: Average frequency from all iterations = ${averageFrequency}Hz`);
+          
+          // Update UI with the final average frequency
+          setCurrentFrequency(averageFrequency);
+          
+          // Check if it's an angelic frequency
+          const isAngelic = isAngelicFrequency(averageFrequency);
+          setHasAngelicFrequency(isAngelic);
+          
+          if (isAngelic) {
+            console.log(`✨✨✨ FINAL RESULT IS AN ANGELIC FREQUENCY! ✨✨✨`);
+            setDetectionStatus(`Recording Complete - Angelic Frequency Detected (${averageFrequency}Hz)`);
+          } else {
+            setDetectionStatus(`Recording Complete - Average Frequency: ${averageFrequency}Hz`);
+          }
+          
+          // Add to detected frequencies history with longer duration
+          const newFrequency = {
+            frequency: averageFrequency,
+            duration: 5, // Longer duration for the calculated average
+            timestamp: Date.now()
+          };
+          setDetectedFrequencies(prev => [...prev, newFrequency]);
+        } else {
+          console.log(`⚠️ Could not calculate valid average frequency`);
+          setDetectionStatus("Recording Loop Complete - No valid frequencies detected");
+        }
+        
         console.log(`🔄 Auto-deactivating after completing ${MAX_ITERATIONS} iterations`);
         setIsActive(false);
-        setDetectionStatus("Recording Loop Complete");
         
         // Clear the global timeout
         clearTimeout(loopTimeoutId);

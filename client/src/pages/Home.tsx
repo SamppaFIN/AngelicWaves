@@ -283,6 +283,28 @@ export default function Home() {
                 <h4 className="font-medium text-white mb-1">
                   Detected Frequencies: {iterationResults.length}/{MAX_ITERATIONS}
                 </h4>
+                
+                {/* Show average frequency if all iterations are complete */}
+                {iterationResults.length === MAX_ITERATIONS && detectionStatus.includes("Complete") && (
+                  <div className="mb-4 p-3 bg-green-800/30 border border-green-500/30 rounded-lg">
+                    <div className="text-sm text-green-300 mb-1">AI Analysis Results:</div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-xs text-green-200/70">Average Frequency:</div>
+                        <div className="text-2xl font-bold text-white mt-1">{currentFrequency}Hz</div>
+                        {isAngelicFrequency(currentFrequency) && (
+                          <div className="text-purple-300 text-sm mt-1 font-medium">✨ Angelic Frequency!</div>
+                        )}
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-green-200/70">Detection Method:</div>
+                        <div className="text-sm text-white mt-1">15-point FFT Analysis</div>
+                        <div className="text-xs text-green-300/70 mt-1">Spectral Resolution: 11Hz</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                
                 <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
                   {iterationResults.map(result => (
                     <div 
