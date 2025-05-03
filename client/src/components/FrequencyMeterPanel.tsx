@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Progress } from "@/components/ui/progress";
 import { angelicFrequencies } from "@/lib/frequencyAnalysis";
 
@@ -12,9 +12,20 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
   const [frequencyLevels, setFrequencyLevels] = useState<Record<number, number>>({});
   // Track peak levels to show "resonance memory"
   const [peakLevels, setPeakLevels] = useState<Record<number, number>>({});
+  // Display frequency (for UI only, smoothed update)
+  const [displayFrequency, setDisplayFrequency] = useState(currentFrequency);
+  
+  // Keep track of previous frequency for debugging
+  const prevFrequencyRef = useRef<number>(0);
   
   // Update frequency levels based on proximity to current frequency
   useEffect(() => {
+    console.log(`📊 FrequencyMeterPanel: Received frequency update ${currentFrequency}Hz (prev: ${prevFrequencyRef.current}Hz)`);
+    prevFrequencyRef.current = currentFrequency;
+    
+    // Always update the display frequency to match current
+    setDisplayFrequency(currentFrequency);
+    
     if (!isActive || currentFrequency === 0) {
       // Keep peak levels but set current levels to zero when inactive
       const resetLevels = Object.fromEntries(
@@ -25,7 +36,7 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
     }
     
     // Calculate proximity for each angelic frequency
-    const newLevels = { ...frequencyLevels };
+    const newLevels: Record<number, number> = {};
     const newPeakLevels = { ...peakLevels };
     
     angelicFrequencies.forEach(angelicFreq => {
@@ -64,13 +75,18 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
       newLevels[freq] = level;
     });
     
+    // Always set frequency levels with a fresh object to trigger updates
     setFrequencyLevels(newLevels);
     setPeakLevels(newPeakLevels);
+    
   }, [currentFrequency, isActive]);
   
   return (
     <div className="bg-gray-800/70 p-4 rounded-lg mb-6">
-      <h3 className="text-green-400 font-medium mb-3">Frequency Proximity Meter</h3>
+      <h3 className="text-green-400 font-medium mb-3 flex items-center justify-between">
+        <span>Frequency Proximity Meter</span>
+        {isActive && <span className="text-xs text-green-300 bg-green-900/40 px-2 py-1 rounded">Active</span>}
+      </h3>
       
       <div className="space-y-3">
         {angelicFrequencies.map(({ frequency, description }) => {
@@ -86,7 +102,7 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
                   {isPerfectMatch && ' ✧'}
                 </div>
                 <div className={`text-xs ${isPerfectMatch ? 'text-green-300' : 'text-gray-400'}`}>
-                  {level}% {peak > level && peak > 50 ? `(Peak: ${Math.round(peak)}%)` : ''}
+                  {level.toFixed(0)}% {peak > level && peak > 50 ? `(Peak: ${Math.round(peak)}%)` : ''}
                 </div>
               </div>
               <div className="relative flex items-center gap-2">
@@ -103,8 +119,9 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
                 
                 {/* Main progress bar */}
                 <Progress 
+                  key={`prog-${frequency}-${level}`}
                   value={level} 
-                  className={`h-2 ${isPerfectMatch ? 'animate-pulse' : ''}`}
+                  className={`h-2 transition-all duration-300 ${isPerfectMatch ? 'animate-pulse' : ''}`}
                   // Enhanced color changes based on level intensity
                   style={{ 
                     backgroundColor: 'rgba(75, 85, 99, 0.3)',
@@ -119,8 +136,16 @@ export function FrequencyMeterPanel({ currentFrequency, isActive }: FrequencyMet
           );
         })}
       </div>
+      
+      <div className="mt-5 py-2 px-3 bg-gray-900/60 rounded-md border border-gray-700/50">
+        <div className="flex justify-between text-sm">
+          <div className="text-gray-400">Current:</div>
+          <div className="font-medium text-green-400">{displayFrequency.toFixed(0)} Hz</div>
+        </div>
+      </div>
+      
       <div className="mt-4 text-xs text-gray-400">
-        This panel shows how close the current frequency ({currentFrequency}Hz) is to each of the angelic frequencies.
+        This panel shows how close the current frequency is to each of the angelic frequencies.
         <br/>
         <span className="text-green-400/70">Green markers</span> show the highest resonance points detected.
       </div>

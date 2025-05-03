@@ -966,7 +966,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       setDetectionStatus("Recording Loop Timed Out");
       
       // Generate some random data to show something
-      const randomResults = [];
+      const randomResults: Array<{iteration: number, frequency: number}> = [];
       for (let i = 1; i <= MAX_ITERATIONS; i++) {
         if (!iterationResults.find(r => r.iteration === i)) {
           const randomFreq = Math.round(
