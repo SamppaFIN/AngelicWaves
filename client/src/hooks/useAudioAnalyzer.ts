@@ -33,6 +33,11 @@ interface AudioAnalyzerResult {
   // Add frequency spectrum analysis 
   frequencySpectrum: Uint8Array | null;
   dominantFrequencies: DominantFrequency[];
+  // Recording loop information
+  isRecordingLoop: boolean;
+  currentIteration: number;
+  iterationResults: Array<{iteration: number, frequency: number}>;
+  MAX_ITERATIONS: number;
 }
 
 export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResult {
@@ -49,9 +54,12 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   // New state for frequency spectrum analysis
   const [frequencySpectrum, setFrequencySpectrum] = useState<Uint8Array | null>(null);
   const [dominantFrequencies, setDominantFrequencies] = useState<DominantFrequency[]>([]);
-  // Add auto-recording state
-  const [isAutoRecording, setIsAutoRecording] = useState(false);
+  // Add recording loop state
+  const [isRecordingLoop, setIsRecordingLoop] = useState(false);
+  const [currentIteration, setCurrentIteration] = useState(0);
+  const [iterationResults, setIterationResults] = useState<{iteration: number, frequency: number}[]>([]);
   const [lastRecordingTime, setLastRecordingTime] = useState(0);
+  const MAX_ITERATIONS = 15; // Number of iterations before auto-stopping
   
   const audioContextRef = useRef<AudioContext | null>(null);
   const analyzerRef = useRef<AnalyserNode | null>(null);
@@ -767,6 +775,169 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     setDominantFrequencies
   ]);
 
+  // Perform a single recording and frequency analysis
+  const recordAndAnalyzeFrequency = useCallback(async (iterationNumber: number): Promise<number> => {
+    return new Promise(async (resolve) => {
+      if (!analyzerRef.current && !isSimulationMode) {
+        // Set up audio analysis if not already done
+        const setupSuccess = await setupAudioAnalysis();
+        if (!setupSuccess) {
+          console.error(`Iteration ${iterationNumber}: Failed to set up audio analysis`);
+          resolve(0); // Return 0 if failed
+          return;
+        }
+      }
+      
+      // In simulation mode, return a simulated frequency
+      if (isSimulationMode) {
+        const simulatedFreq = Math.round(
+          Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+        );
+        console.log(`Iteration ${iterationNumber}: Simulated frequency ${simulatedFreq}Hz`);
+        resolve(simulatedFreq);
+        return;
+      }
+      
+      // Real recording logic
+      if (!analyzerRef.current) {
+        console.error(`Iteration ${iterationNumber}: Analyzer not available`);
+        resolve(0);
+        return;
+      }
+      
+      console.log(`🎙️ Starting iteration ${iterationNumber} recording...`);
+      
+      // We'll record for 1 second and then analyze the data
+      let recordingStartTime = Date.now();
+      let highestAmplitude = 0;
+      let dominantFrequency = 0;
+      
+      // Function to analyze the frequency data
+      const analyzeFrame = () => {
+        try {
+          const analyzer = analyzerRef.current;
+          if (!analyzer) return;
+          
+          const bufferLength = analyzer.frequencyBinCount;
+          const dataArray = new Uint8Array(bufferLength);
+          analyzer.getByteFrequencyData(dataArray);
+          
+          // Find highest amplitude and corresponding frequency bin
+          let maxAmplitude = 0;
+          let maxBin = 0;
+          
+          for (let i = 0; i < dataArray.length; i++) {
+            if (dataArray[i] > maxAmplitude) {
+              maxAmplitude = dataArray[i];
+              maxBin = i;
+            }
+          }
+          
+          // If this frame has a higher amplitude than previous frames, update the dominant frequency
+          if (maxAmplitude > highestAmplitude) {
+            highestAmplitude = maxAmplitude;
+            
+            // Convert bin index to frequency
+            // formula: frequency = (binIndex * sampleRate/2) / fftSize
+            const sampleRate = audioContextRef.current?.sampleRate || 44100;
+            const calculatedFreq = Math.round((maxBin * sampleRate / 2) / analyzer.fftSize);
+            dominantFrequency = calculatedFreq;
+          }
+          
+          // Check if we've been recording for 1 second
+          const now = Date.now();
+          if (now - recordingStartTime < 1000) {
+            // Continue recording
+            requestAnimationFrame(analyzeFrame);
+          } else {
+            // Recording complete
+            console.log(`✅ Iteration ${iterationNumber} complete: Detected ${dominantFrequency}Hz`);
+            resolve(dominantFrequency);
+          }
+        } catch (error) {
+          console.error(`Error during iteration ${iterationNumber}:`, error);
+          resolve(0);
+        }
+      };
+      
+      // Start the analysis
+      analyzeFrame();
+    });
+  }, [isSimulationMode, setupAudioAnalysis, settings.minFrequency, settings.maxFrequency]);
+  
+  // Start the recording loop with 15 iterations
+  const startRecordingLoop = useCallback(async () => {
+    // Reset state for new recording loop
+    setIsRecordingLoop(true);
+    setCurrentIteration(0);
+    setIterationResults([]);
+    
+    // Initialize audio analysis if needed
+    if (!isSimulationMode) {
+      const setupSuccess = await setupAudioAnalysis();
+      if (!setupSuccess) {
+        console.error("Failed to setup audio analysis for recording loop");
+        setIsRecordingLoop(false);
+        return;
+      }
+    }
+    
+    setIsActive(true);
+    setDetectionStatus("Recording Loop Started - Round 1/15");
+    
+    // Function to run a single iteration
+    const runIteration = async (iteration: number) => {
+      if (iteration > MAX_ITERATIONS || !isActive) {
+        // End the loop if we've reached max iterations or detector was deactivated
+        console.log("Recording loop complete!");
+        setIsRecordingLoop(false);
+        
+        // Auto-deactivate after completing all iterations
+        if (iteration > MAX_ITERATIONS) {
+          setIsActive(false);
+          setDetectionStatus("Recording Loop Complete");
+        }
+        return;
+      }
+      
+      setCurrentIteration(iteration);
+      setDetectionStatus(`Recording Loop - Round ${iteration}/${MAX_ITERATIONS}`);
+      
+      // Record and analyze for this iteration
+      const frequency = await recordAndAnalyzeFrequency(iteration);
+      
+      // Update the UI with the new frequency
+      setCurrentFrequency(frequency);
+      setHasAngelicFrequency(isAngelicFrequency(frequency));
+      
+      // Save to iteration results
+      setIterationResults(prev => [
+        ...prev, 
+        { iteration, frequency }
+      ]);
+      
+      // Add to detected frequencies history (even if outside range)
+      setDetectedFrequencies(prev => [
+        ...prev,
+        {
+          frequency,
+          duration: 1, // Each iteration is 1 second
+          timestamp: Date.now()
+        }
+      ]);
+      
+      // Short delay between iterations
+      setTimeout(() => {
+        if (isActive) {
+          runIteration(iteration + 1);
+        }
+      }, 500); // 0.5 second delay between recordings
+    };
+    
+    // Start the first iteration
+    runIteration(1);
+  }, [isActive, isSimulationMode, setupAudioAnalysis, recordAndAnalyzeFrequency]);
+  
   // Toggle detector on/off
   const toggleDetector = useCallback(async () => {
     if (isActive) {
@@ -780,6 +951,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       setCurrentFrequency(0);
       setDetectionStatus("Detector inactive");
       setHasAngelicFrequency(false);
+      setIsRecordingLoop(false);
       
       // Save the last detected frequency if applicable
       const now = Date.now();
@@ -801,26 +973,10 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       lastDetectedFrequencyRef.current = 0;
       frequencyStartTimeRef.current = 0;
     } else {
-      // Turn on
-      const success = await setupAudioAnalysis();
-      if (success) {
-        setIsActive(true);
-        setDetectionStatus(isSimulationMode ? "Simulation Mode - Detecting..." : "Microphone Active - Make some noise!");
-        
-        // Initialize with a random frequency value if in simulation mode
-        if (isSimulationMode) {
-          // Start with a random frequency within range
-          const initialFreq = Math.round(
-            settings.minFrequency + 
-            Math.random() * (settings.maxFrequency - settings.minFrequency)
-          );
-          setCurrentFrequency(initialFreq);
-        }
-        
-        animationFrameRef.current = requestAnimationFrame(analyzeAudio);
-      }
+      // Start the recording loop instead of the continuous detector
+      startRecordingLoop();
     }
-  }, [isActive, isSimulationMode, setupAudioAnalysis, analyzeAudio]);
+  }, [isActive, startRecordingLoop]);
 
   // Reset detected frequencies
   const resetDetectedFrequencies = useCallback(() => {
