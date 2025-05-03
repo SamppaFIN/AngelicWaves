@@ -53,7 +53,12 @@ export default function Home() {
     simulateAudioAnalysis,
     // Add the new frequency spectrum analysis properties
     frequencySpectrum,
-    dominantFrequencies
+    dominantFrequencies,
+    // Recording loop information 
+    isRecordingLoop,
+    currentIteration,
+    iterationResults,
+    MAX_ITERATIONS
   } = useAudioAnalyzer(settings);
   
   // Combine frequencies from the hook and our local state
@@ -131,8 +136,17 @@ export default function Home() {
     };
   }, []);
   
-  // Set up auto-update for Hz display
+  // Set up auto-update for Hz display - disabled when in recording loop mode
   useEffect(() => {
+    // Disable auto-update if we're in recording loop mode
+    if (isRecordingLoop) {
+      if (autoUpdateTimerRef.current) {
+        clearInterval(autoUpdateTimerRef.current);
+        autoUpdateTimerRef.current = null;
+      }
+      return;
+    }
+    
     // If the detector is active and not in demo mode, set up the timer
     if (isActive && !isDemoMode) {
       console.log("Setting up auto-update timer for Hz display");
@@ -192,7 +206,7 @@ export default function Home() {
       clearInterval(autoUpdateTimerRef.current);
       autoUpdateTimerRef.current = null;
     }
-  }, [isActive, isDemoMode, isSimulationMode, currentFrequency, simulateAudioAnalysis, 
+  }, [isActive, isDemoMode, isSimulationMode, isRecordingLoop, currentFrequency, simulateAudioAnalysis, 
       settings.minFrequency, settings.maxFrequency, toast]);
 
   return (
@@ -288,6 +302,45 @@ export default function Home() {
           </div>
         </div>
         
+        {/* Recording Loop Status */}
+        {isRecordingLoop && (
+          <div className="bg-green-800/40 p-4 rounded-lg mb-6 border border-green-500/30 shadow-lg">
+            <h3 className="text-green-400 font-medium flex items-center mb-3">
+              <span className="animate-pulse mr-2">⚡</span>
+              Recording Loop Progress: Round {currentIteration}/{MAX_ITERATIONS}
+            </h3>
+            
+            <div className="relative w-full h-2 bg-gray-700 rounded-full overflow-hidden mb-4">
+              <div 
+                className="absolute top-0 left-0 h-full bg-green-500 transition-all duration-300"
+                style={{ width: `${(currentIteration / MAX_ITERATIONS) * 100}%` }}
+              />
+            </div>
+            
+            {iterationResults.length > 0 && (
+              <div className="mt-2 text-sm text-gray-300">
+                <h4 className="font-medium text-white mb-1">Detected Frequencies:</h4>
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-2">
+                  {iterationResults.map(result => (
+                    <div 
+                      key={result.iteration} 
+                      className={`p-2 rounded ${isAngelicFrequency(result.frequency) 
+                        ? 'bg-purple-800/50 border border-purple-600/40' 
+                        : 'bg-gray-800/60'}`}
+                    >
+                      <div className="text-xs text-gray-400">Round {result.iteration}</div>
+                      <div className="font-medium">{result.frequency}Hz</div>
+                      {isAngelicFrequency(result.frequency) && (
+                        <div className="text-xs text-purple-300 mt-1">Angelic!</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+        
         {showCalculationMethod && (
           <div className="bg-gray-800/70 p-4 rounded-lg mb-6 text-sm">
             <h3 className="text-green-400 font-medium mb-2">How Frequencies Are Calculated</h3>
@@ -308,6 +361,11 @@ export default function Home() {
                 <p className="text-purple-400 mt-2">
                   Note: Demo mode is currently active, showing frequency at {demoFrequency}Hz
                   {isAngelicFrequency(demoFrequency) && " (Angelic Frequency)"}.
+                </p>
+              )}
+              {isRecordingLoop && (
+                <p className="text-green-400 mt-2">
+                  Note: Recording loop is active. The system is making {MAX_ITERATIONS} one-second recordings to analyze frequencies.
                 </p>
               )}
             </div>

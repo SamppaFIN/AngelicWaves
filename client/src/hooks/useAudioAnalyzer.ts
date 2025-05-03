@@ -1142,6 +1142,11 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     simulateAudioAnalysis,
     // Add new properties for frequency spectrum analysis
     frequencySpectrum,
-    dominantFrequencies
+    dominantFrequencies,
+    // Recording loop information
+    isRecordingLoop,
+    currentIteration,
+    iterationResults,
+    MAX_ITERATIONS
   };
 }
