@@ -136,31 +136,46 @@ export default function Home() {
     };
   }, []);
   
-  // Set up auto-update for Hz display - disabled when in recording loop mode
+  // Set up auto-update for Hz display - completely disabled when in recording loop mode
   useEffect(() => {
-    // Disable auto-update if we're in recording loop mode
+    console.log(`===== AUTO-UPDATE CONFIG =====`);
+    console.log(`isRecordingLoop: ${isRecordingLoop}`);
+    console.log(`isActive: ${isActive}`);
+    console.log(`isDemoMode: ${isDemoMode}`);
+    console.log(`isSimulationMode: ${isSimulationMode}`);
+    
+    // ALWAYS clear any existing timers first when settings change
+    if (autoUpdateTimerRef.current) {
+      console.log("Clearing existing auto-update timer");
+      clearInterval(autoUpdateTimerRef.current);
+      autoUpdateTimerRef.current = null;
+    }
+    
+    // NEVER set up auto-update if recording loop is active
     if (isRecordingLoop) {
-      if (autoUpdateTimerRef.current) {
-        clearInterval(autoUpdateTimerRef.current);
-        autoUpdateTimerRef.current = null;
-      }
+      console.log("‼️ Auto-update DISABLED - Recording loop is active");
       return;
     }
     
-    // If the detector is active and not in demo mode, set up the timer
+    // Only set up timer if detector is active and not in demo mode
     if (isActive && !isDemoMode) {
-      console.log("Setting up auto-update timer for Hz display");
-      
-      // Clear any existing timer first
-      if (autoUpdateTimerRef.current) {
-        clearInterval(autoUpdateTimerRef.current);
-      }
+      console.log("✅ Setting up auto-update timer for Hz display");
       
       // Create a new timer that updates every 3 seconds
       autoUpdateTimerRef.current = window.setInterval(() => {
-        console.log("Auto-updating Hz display");
+        // Make sure recording loop hasn't started since interval was created
+        if (isRecordingLoop) {
+          console.log("‼️ Canceling auto-update - Recording loop now active");
+          if (autoUpdateTimerRef.current) {
+            clearInterval(autoUpdateTimerRef.current);
+            autoUpdateTimerRef.current = null;
+          }
+          return;
+        }
         
-        // Start a new 3-second recording if not already in demo or simulation mode
+        console.log("🔄 Auto-updating Hz display");
+        
+        // Skip auto-update if demo or simulation mode is active
         if (!isDemoMode && !isSimulationMode) {
           // Use simulation to force an update of the frequency display
           // This will update the currentFrequency value in the AudioAnalyzer hook
@@ -179,17 +194,23 @@ export default function Home() {
           // Ensure it stays within our range
           newFrequency = Math.max(settings.minFrequency, Math.min(settings.maxFrequency, newFrequency));
           
-          // Trigger the simulation with this frequency
-          simulateAudioAnalysis(newFrequency);
+          console.log(`🔄 Auto-update generating frequency: ${newFrequency}Hz`);
           
-          // Provide visual feedback with a toast notification every few updates
-          if (Math.random() > 0.7) { // 30% chance to show toast
-            toast({
-              title: "Auto-Update",
-              description: `Detected frequency: ${newFrequency}Hz`,
-              variant: "default",
-              className: "bg-green-800/80"
-            });
+          try {
+            // Call custom frequency update function (not the demo one)
+            updateFrequencyOnly(newFrequency);
+            
+            // Provide visual feedback with a toast notification every few updates
+            if (Math.random() > 0.7) { // 30% chance to show toast
+              toast({
+                title: "Auto-Update",
+                description: `Detected frequency: ${newFrequency}Hz`,
+                variant: "default",
+                className: "bg-green-800/80"
+              });
+            }
+          } catch (err) {
+            console.error("Failed to update frequency:", err);
           }
         }
       }, 3000); // Update every 3 seconds
@@ -197,17 +218,33 @@ export default function Home() {
       // Return cleanup function
       return () => {
         if (autoUpdateTimerRef.current) {
+          console.log("Cleaning up auto-update timer on unmount");
           clearInterval(autoUpdateTimerRef.current);
           autoUpdateTimerRef.current = null;
         }
       };
-    } else if (autoUpdateTimerRef.current) {
-      // If detector is turned off, clear the timer
-      clearInterval(autoUpdateTimerRef.current);
-      autoUpdateTimerRef.current = null;
     }
-  }, [isActive, isDemoMode, isSimulationMode, isRecordingLoop, currentFrequency, simulateAudioAnalysis, 
+  }, [isActive, isDemoMode, isSimulationMode, isRecordingLoop, currentFrequency, 
       settings.minFrequency, settings.maxFrequency, toast]);
+  
+  // Custom function to update frequency WITHOUT triggering demo mode
+  const updateFrequencyOnly = useCallback((frequency: number) => {
+    console.log(`📊 Updating frequency display to: ${frequency}Hz (no demo mode)`);
+    
+    // No demo mode activation here - just update the current frequency
+    // We'll add this as detected frequency history
+    const timestamp = Date.now();
+    const newDetectedFrequency: DetectedFrequency = {
+      frequency,
+      duration: 1,
+      timestamp
+    };
+    
+    // Add to hook detected frequencies 
+    hookDetectedFrequencies.push(newDetectedFrequency);
+    
+    // No need to do anything else - the hook already has the latest frequencies
+  }, [hookDetectedFrequencies]);
 
   return (
     <div className="font-sans bg-gray-900 text-white min-h-screen pb-32">

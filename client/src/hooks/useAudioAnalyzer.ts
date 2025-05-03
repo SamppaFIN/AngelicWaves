@@ -957,18 +957,37 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   
   // Toggle detector on/off
   const toggleDetector = useCallback(async () => {
+    console.log(`🔄 TOGGLE DETECTOR: Currently ${isActive ? 'active' : 'inactive'}`);
+    console.log(`🔄 Current state - isDemoMode: ${isDemoMode}, isRecordingLoop: ${isRecordingLoop}`);
+    
     if (isActive) {
       // Turn off
+      console.log(`🛑 Deactivating detector`);
+      
+      // Cancel animation frame if running
       if (animationFrameRef.current) {
+        console.log(`🛑 Canceling animation frame`);
         cancelAnimationFrame(animationFrameRef.current);
         animationFrameRef.current = null;
       }
       
+      // Reset all states
       setIsActive(false);
       setCurrentFrequency(0);
       setDetectionStatus("Detector inactive");
       setHasAngelicFrequency(false);
-      setIsRecordingLoop(false);
+      
+      // Make sure recording loop is also turned off
+      if (isRecordingLoop) {
+        console.log(`🛑 Stopping recording loop`);
+        setIsRecordingLoop(false);
+      }
+      
+      // Turn off demo mode if active
+      if (isDemoMode) {
+        console.log(`🛑 Turning off demo mode`);
+        setIsDemoMode(false);
+      }
       
       // Save the last detected frequency if applicable
       const now = Date.now();
@@ -990,10 +1009,22 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       lastDetectedFrequencyRef.current = 0;
       frequencyStartTimeRef.current = 0;
     } else {
-      // Start the recording loop instead of the continuous detector
+      console.log(`▶️ STARTING RECORDING LOOP - Make sure demo mode is off`);
+      
+      // Turn off demo mode if it's on
+      if (isDemoMode) {
+        console.log(`🔄 Turning off demo mode before starting recording loop`);
+        setIsDemoMode(false);
+      }
+      
+      // Wait a moment to ensure state updates
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      // Start the recording loop
+      console.log(`▶️ Starting recording loop`);
       startRecordingLoop();
     }
-  }, [isActive, startRecordingLoop]);
+  }, [isActive, isDemoMode, isRecordingLoop, startRecordingLoop]);
 
   // Reset detected frequencies
   const resetDetectedFrequencies = useCallback(() => {
@@ -1059,6 +1090,14 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const simulateAudioAnalysis = useCallback((frequency: number) => {
     console.log(`💡 SIMULATING AUDIO ANALYSIS: Injecting fake ${frequency}Hz input data...`);
     
+    // IMPORTANT: Never activate demo mode during recording loop
+    if (isRecordingLoop) {
+      console.log(`⛔ SIMULATION BLOCKED: Recording loop is active, won't activate demo mode`);
+      // Just update the current frequency without activating demo mode
+      setCurrentFrequency(frequency);
+      return false;
+    }
+    
     // First make sure we're active and analyzer is initialized
     if (!isActive) {
       console.log("⚠️ Activating detector first for simulation...");
@@ -1068,7 +1107,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     // We'll simulate the complete detection process for debugging
     console.log("📊 Starting simulated audio detection process");
     
-    // Force demo mode on for visualization
+    // Activate demo mode (THIS IS THE KEY PART THAT CAUSES THE ISSUE)
+    console.log("🎮 Enabling demo mode for simulation");
     setIsDemoMode(true);
     
     // Set current frequency to show the input frequency
@@ -1099,7 +1139,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     console.log(`✅ Audio input simulation complete! The detector is now showing ${frequency}Hz`);
     
     return true;
-  }, [isActive]);
+  }, [isActive, isRecordingLoop]);
   
   // Toggle demo mode function - instantly shows an angelic frequency
   const toggleDemoMode = useCallback(() => {
