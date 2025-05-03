@@ -24,14 +24,34 @@ export function FrequencyVisualizer({
   // Track displayed frequency for UI
   const [displayedFrequency, setDisplayedFrequency] = useState(currentFrequency);
   
-  console.log(`🎯 FrequencyVisualizer: currentFrequency=${currentFrequency}, displayed=${displayedFrequency}, status=${detectionStatus}`);
+  // Show detailed info about what's being rendered
+  console.log(`🎯 DISPLAY: Frequency=${currentFrequency}Hz, Showing=${displayedFrequency}Hz, Status="${detectionStatus}"`);
+  
+  // Debug rounds if showing recording loop status
+  if (detectionStatus.includes("Recording Loop")) {
+    const roundMatch = detectionStatus.match(/Round (\d+)\/(\d+)/);
+    if (roundMatch) {
+      const currentRound = parseInt(roundMatch[1]);
+      const totalRounds = parseInt(roundMatch[2]);
+      console.log(`⭐⭐⭐ VISUALIZER SHOWING ROUND ${currentRound}/${totalRounds} ⭐⭐⭐`);
+    }
+  }
   
   // Set audio detected state when we have a frequency and update displayed frequency
   useEffect(() => {
-    console.log(`🎯 FrequencyVisualizer useEffect: currentFrequency changed to ${currentFrequency}`);
+    // Important: Log every frequency change to track issues
+    console.log(`🎯 FrequencyVisualizer RECEIVED NEW FREQUENCY: ${currentFrequency}Hz (prev displayed: ${displayedFrequency}Hz)`);
     
-    // Always update the displayed frequency right away
-    setDisplayedFrequency(currentFrequency);
+    // Use requestAnimationFrame to ensure UI updates reliably
+    requestAnimationFrame(() => {
+      // Always update the displayed frequency immediately
+      setDisplayedFrequency(prevFreq => {
+        if (prevFreq !== currentFrequency) {
+          console.log(`🎯 UPDATING DISPLAY from ${prevFreq}Hz to ${currentFrequency}Hz`);
+        }
+        return currentFrequency;
+      });
+    });
     
     if (currentFrequency > 0) {
       setAudioDetected(true);
