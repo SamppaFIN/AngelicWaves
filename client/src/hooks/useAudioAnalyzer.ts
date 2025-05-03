@@ -1272,7 +1272,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
           console.log(`⚠️ Using fallback frequency analysis with reduced certainty`);
           
           // Find nearest angelic frequency (without tolerance limitation)
-          let closestFreq = null;
+          let closestFreq: AngelicFrequency | null = null;
           let minDiff = Number.MAX_VALUE;
           
           angelicFrequencies.forEach(af => {
