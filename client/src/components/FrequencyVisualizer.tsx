@@ -21,9 +21,18 @@ export function FrequencyVisualizer({
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [discoLights, setDiscoLights] = useState<{x: number, y: number, size: number, delay: number}[]>([]);
   const [audioDetected, setAudioDetected] = useState(false);
+  // Track displayed frequency for UI
+  const [displayedFrequency, setDisplayedFrequency] = useState(currentFrequency);
   
-  // Set audio detected state when we have a frequency 
+  console.log(`🎯 FrequencyVisualizer: currentFrequency=${currentFrequency}, displayed=${displayedFrequency}, status=${detectionStatus}`);
+  
+  // Set audio detected state when we have a frequency and update displayed frequency
   useEffect(() => {
+    console.log(`🎯 FrequencyVisualizer useEffect: currentFrequency changed to ${currentFrequency}`);
+    
+    // Always update the displayed frequency right away
+    setDisplayedFrequency(currentFrequency);
+    
     if (currentFrequency > 0) {
       setAudioDetected(true);
       // Reset the audio detected indicator after a short delay
@@ -66,10 +75,11 @@ export function FrequencyVisualizer({
       canvas.height = height;
       ctx.clearRect(0, 0, width, height);
 
-      if (currentFrequency > 0) {
+      // IMPORTANT: Use the local state for rendering
+      if (displayedFrequency > 0) {
         // Draw Tesla-style frequency circles for each angelic frequency
         angelicFrequencies.forEach((freq, index) => {
-          const isActive = Math.abs(currentFrequency - freq.frequency) < 15; // Increased tolerance
+          const isActive = Math.abs(displayedFrequency - freq.frequency) < 15; // Increased tolerance
           const color = isActive ? 
             `hsla(${140}, 80%, 60%, ${0.7 + Math.sin(phase) * 0.3})` : 
             'rgba(74, 222, 128, 0.2)';
@@ -89,7 +99,7 @@ export function FrequencyVisualizer({
     draw();
 
     return () => cancelAnimationFrame(animationFrameId);
-  }, [isActive, currentFrequency, hasAngelicFrequency]);
+  }, [isActive, displayedFrequency, currentFrequency, hasAngelicFrequency]);
 
   function drawTeslaPattern(
     ctx: CanvasRenderingContext2D, 
@@ -152,7 +162,7 @@ export function FrequencyVisualizer({
       {isActive && (
         <div 
           className={`absolute inset-0 rounded-full 
-                     ${currentFrequency > 0 ? 'border-4 border-green-500 animate-ping opacity-75' : 
+                     ${displayedFrequency > 0 ? 'border-4 border-green-500 animate-ping opacity-75' : 
                        audioDetected ? 'border-2 border-green-400 animate-pulse opacity-50' : 'border border-green-300 opacity-25'}`}
         />
       )}
@@ -185,14 +195,14 @@ export function FrequencyVisualizer({
       
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center z-10">
         <div className={`text-3xl font-bold ${hasAngelicFrequency ? 'text-white animate-pulse' : 'text-green-400'}`}>
-          {Math.round(currentFrequency)} Hz
+          {Math.round(displayedFrequency)} Hz
         </div>
         <div className={`${hasAngelicFrequency ? 'text-green-200' : 'text-gray-400'}`}>
           {hasAngelicFrequency ? '✨ Angelic Frequency Detected ✨' : detectionStatus}
         </div>
         
         {/* Sound level indicator - shows when audio is being detected */}
-        {isActive && !hasAngelicFrequency && currentFrequency > 0 && (
+        {isActive && !hasAngelicFrequency && displayedFrequency > 0 && (
           <div className="mt-2 flex justify-center items-center">
             <div className="flex gap-1">
               <div className="h-2 w-1 bg-green-500 animate-bounce" style={{ animationDelay: '0ms' }}></div>
