@@ -138,113 +138,25 @@ export default function Home() {
   
   // Set up auto-update for Hz display - completely disabled when in recording loop mode
   useEffect(() => {
-    console.log(`===== AUTO-UPDATE CONFIG =====`);
-    console.log(`isRecordingLoop: ${isRecordingLoop}`);
-    console.log(`isActive: ${isActive}`);
-    console.log(`isDemoMode: ${isDemoMode}`);
-    console.log(`isSimulationMode: ${isSimulationMode}`);
-    
     // ALWAYS clear any existing timers first when settings change
     if (autoUpdateTimerRef.current) {
-      console.log("Clearing existing auto-update timer");
       clearInterval(autoUpdateTimerRef.current);
       autoUpdateTimerRef.current = null;
     }
     
-    // NEVER set up auto-update if recording loop is active
-    if (isRecordingLoop) {
-      console.log("‼️ Auto-update DISABLED - Recording loop is active");
-      return;
-    }
-    
-    // Only set up timer if detector is active and not in demo mode
-    if (isActive && !isDemoMode) {
-      console.log("✅ Setting up auto-update timer for Hz display");
-      
-      // Create a new timer that updates every 3 seconds
-      autoUpdateTimerRef.current = window.setInterval(() => {
-        // Make sure recording loop hasn't started since interval was created
-        if (isRecordingLoop) {
-          console.log("‼️ Canceling auto-update - Recording loop now active");
-          if (autoUpdateTimerRef.current) {
-            clearInterval(autoUpdateTimerRef.current);
-            autoUpdateTimerRef.current = null;
-          }
-          return;
-        }
-        
-        console.log("🔄 Auto-updating Hz display");
-        
-        // Skip auto-update if demo or simulation mode is active
-        if (!isDemoMode && !isSimulationMode) {
-          // Use simulation to force an update of the frequency display
-          // This will update the currentFrequency value in the AudioAnalyzer hook
-          const randomOffset = Math.floor(Math.random() * 10) - 5; // Random value between -5 and 5
-          let newFrequency = Math.max(1, currentFrequency || 
-                                      Math.floor((settings.minFrequency + settings.maxFrequency) / 2));
-          
-          // If current frequency is 0, use a value in the middle of our range
-          if (newFrequency <= 1) {
-            newFrequency = Math.floor((settings.minFrequency + settings.maxFrequency) / 2);
-          }
-          
-          // Add a small random variation to make it look more natural
-          newFrequency += randomOffset;
-          
-          // Ensure it stays within our range
-          newFrequency = Math.max(settings.minFrequency, Math.min(settings.maxFrequency, newFrequency));
-          
-          console.log(`🔄 Auto-update generating frequency: ${newFrequency}Hz`);
-          
-          try {
-            // Call custom frequency update function (not the demo one)
-            updateFrequencyOnly(newFrequency);
-            
-            // Provide visual feedback with a toast notification every few updates
-            if (Math.random() > 0.7) { // 30% chance to show toast
-              toast({
-                title: "Auto-Update",
-                description: `Detected frequency: ${newFrequency}Hz`,
-                variant: "default",
-                className: "bg-green-800/80"
-              });
-            }
-          } catch (err) {
-            console.error("Failed to update frequency:", err);
-          }
-        }
-      }, 3000); // Update every 3 seconds
-      
-      // Return cleanup function
-      return () => {
-        if (autoUpdateTimerRef.current) {
-          console.log("Cleaning up auto-update timer on unmount");
-          clearInterval(autoUpdateTimerRef.current);
-          autoUpdateTimerRef.current = null;
-        }
-      };
-    }
-  }, [isActive, isDemoMode, isSimulationMode, isRecordingLoop, currentFrequency, 
-      settings.minFrequency, settings.maxFrequency, toast]);
-  
-  // Custom function to update frequency WITHOUT triggering demo mode
-  const updateFrequencyOnly = useCallback((frequency: number) => {
-    console.log(`📊 Updating frequency display to: ${frequency}Hz (no demo mode)`);
-    
-    // No demo mode activation here - just update the current frequency
-    // We'll add this as detected frequency history
-    const timestamp = Date.now();
-    const newDetectedFrequency: DetectedFrequency = {
-      frequency,
-      duration: 1,
-      timestamp
+    // Completely disable auto-update to improve real data visualization
+    // This will prevent any mock frequency data from being generated
+    // Return cleanup function
+    return () => {
+      if (autoUpdateTimerRef.current) {
+        clearInterval(autoUpdateTimerRef.current);
+        autoUpdateTimerRef.current = null;
+      }
     };
-    
-    // Add to hook detected frequencies 
-    hookDetectedFrequencies.push(newDetectedFrequency);
-    
-    // No need to do anything else - the hook already has the latest frequencies
-  }, [hookDetectedFrequencies]);
+  }, [isActive, isDemoMode, isSimulationMode, isRecordingLoop]);
+  
+  // REMOVED: Custom frequency update function - no longer needed
+  // We'll simply use the hook's functions directly
 
   return (
     <div className="font-sans bg-gray-900 text-white min-h-screen pb-32">
