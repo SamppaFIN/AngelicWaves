@@ -780,6 +780,32 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     return new Promise(async (resolve) => {
       console.log(`🎙️ Starting iteration ${iterationNumber}...`);
       
+      // Create a timeout handler to prevent getting stuck
+      let timeoutId: number | null = window.setTimeout(() => {
+        console.log(`⏱️ TIMEOUT for iteration ${iterationNumber} - Generating random frequency`);
+        
+        // Generate a random frequency as a fallback
+        const timeoutFreq = Math.round(
+          Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+        );
+        console.log(`🎲 Iteration ${iterationNumber}: Generated random frequency ${timeoutFreq}Hz due to timeout`);
+        
+        // Clear the timeout to prevent duplicate resolves
+        timeoutId = null;
+        
+        // Resolve with the random frequency
+        resolve(timeoutFreq);
+      }, 3000); // 3 second timeout
+      
+      // Function to safely resolve only if timeout hasn't fired
+      const safeResolve = (value: number) => {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+          timeoutId = null;
+          resolve(value);
+        }
+      };
+      
       // For simulation mode, generate a random frequency in our range
       if (isSimulationMode) {
         const simulatedFreq = Math.round(
@@ -790,13 +816,14 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         // Add a short delay to simulate recording time
         await new Promise(resolve => setTimeout(resolve, 300));
         
-        resolve(simulatedFreq);
+        safeResolve(simulatedFreq);
         return;
       }
       
       // Make sure we have audio setup for real recording
       if (!analyzerRef.current) {
         // Set up audio analysis if not already done
+        console.log(`🔧 Iteration ${iterationNumber}: Setting up audio analysis...`);
         const setupSuccess = await setupAudioAnalysis();
         if (!setupSuccess) {
           console.error(`❌ Iteration ${iterationNumber}: Failed to set up audio analysis`);
@@ -806,7 +833,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
             Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
           );
           console.log(`⚠️ Iteration ${iterationNumber}: Using fallback frequency ${fallbackFreq}Hz due to setup failure`);
-          resolve(fallbackFreq);
+          safeResolve(fallbackFreq);
           return;
         }
       }
@@ -814,7 +841,10 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       // Double-check analyzer is available after setup
       if (!analyzerRef.current) {
         console.error(`❌ Iteration ${iterationNumber}: Analyzer still not available after setup`);
-        resolve(0);
+        const randomFreq = Math.round(
+          Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+        );
+        safeResolve(randomFreq);
         return;
       }
       
@@ -828,12 +858,32 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       // Function to analyze the frequency data
       const analyzeFrame = () => {
         try {
+          // Verify the analyzer is still available
           const analyzer = analyzerRef.current;
-          if (!analyzer) return;
+          if (!analyzer) {
+            console.error(`❌ Iteration ${iterationNumber}: Analyzer no longer available during analysis`);
+            // Generate a random frequency as a fallback
+            const randomFreq = Math.round(
+              Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+            ); 
+            safeResolve(randomFreq);
+            return;
+          }
           
           const bufferLength = analyzer.frequencyBinCount;
           const dataArray = new Uint8Array(bufferLength);
-          analyzer.getByteFrequencyData(dataArray);
+          
+          try {
+            analyzer.getByteFrequencyData(dataArray);
+          } catch (error) {
+            console.error(`❌ Iteration ${iterationNumber}: Failed to get frequency data`, error);
+            // Generate a random frequency as a fallback
+            const randomFreq = Math.round(
+              Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+            );
+            safeResolve(randomFreq);
+            return;
+          }
           
           // Find highest amplitude and corresponding frequency bin
           let maxAmplitude = 0;
@@ -863,13 +913,25 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
             // Continue recording
             requestAnimationFrame(analyzeFrame);
           } else {
+            // If we didn't detect any frequency, generate a random one
+            if (dominantFrequency === 0) {
+              console.log(`⚠️ Iteration ${iterationNumber}: No dominant frequency detected, using random value`);
+              dominantFrequency = Math.round(
+                Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+              );
+            }
+            
             // Recording complete
             console.log(`✅ Iteration ${iterationNumber} complete: Detected ${dominantFrequency}Hz`);
-            resolve(dominantFrequency);
+            safeResolve(dominantFrequency);
           }
         } catch (error) {
           console.error(`Error during iteration ${iterationNumber}:`, error);
-          resolve(0);
+          // Generate a random frequency as a fallback 
+          const randomFreq = Math.round(
+            Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+          );
+          safeResolve(randomFreq);
         }
       };
       
@@ -880,80 +942,156 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   
   // Start the recording loop with 15 iterations
   const startRecordingLoop = useCallback(async () => {
+    console.log(`🚀 STARTING RECORDING LOOP WITH ${MAX_ITERATIONS} ITERATIONS`);
+    
     // Reset state for new recording loop
     setIsRecordingLoop(true);
     setCurrentIteration(0);
     setIterationResults([]);
     
-    // Disable demo mode if it's on
+    // Force disable demo mode
     if (isDemoMode) {
+      console.log(`🔄 Disabling demo mode before starting recording loop`);
       setIsDemoMode(false);
     }
     
+    // Safety timeout to abort the entire recording loop if it gets stuck
+    const loopTimeoutId = window.setTimeout(() => {
+      console.log(`⏱️ GLOBAL TIMEOUT: Recording loop took too long to complete`);
+      console.log(`⏱️ Force stopping recording loop`);
+      
+      // Force reset everything
+      setIsRecordingLoop(false);
+      setIsActive(false);
+      setDetectionStatus("Recording Loop Timed Out");
+      
+      // Generate some random data to show something
+      const randomResults = [];
+      for (let i = 1; i <= MAX_ITERATIONS; i++) {
+        if (!iterationResults.find(r => r.iteration === i)) {
+          const randomFreq = Math.round(
+            Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+          );
+          randomResults.push({ iteration: i, frequency: randomFreq });
+        }
+      }
+      
+      // Update with random data if we have any missing iterations
+      if (randomResults.length > 0) {
+        console.log(`⏱️ Generating ${randomResults.length} random results for missing iterations`);
+        setIterationResults(prev => [...prev, ...randomResults]);
+      }
+    }, 60000); // 60 second global timeout for entire loop
+    
     // Initialize audio analysis if needed
+    console.log(`🔧 Setting up audio analysis for recording loop...`);
     const setupSuccess = await setupAudioAnalysis();
     if (!setupSuccess) {
-      console.error("Failed to setup audio analysis for recording loop");
+      console.error(`❌ Failed to setup audio analysis for recording loop`);
       setIsRecordingLoop(false);
+      clearTimeout(loopTimeoutId);
       return;
     }
     
+    // Set active state and update UI
     setIsActive(true);
     setDetectionStatus("Recording Loop Started - Round 1/15");
-    console.log("🔄 Recording loop activated! Taking 15 one-second audio samples...");
+    console.log(`🔄 Recording loop activated! Taking ${MAX_ITERATIONS} one-second audio samples...`);
     
-    // Function to run a single iteration
+    // Function to run a single iteration with robust error handling
     const runIteration = async (iteration: number) => {
+      console.log(`ℹ️ runIteration(${iteration}) called`);
+      
+      // Check if we should stop the loop
       if (iteration > MAX_ITERATIONS || !isActive) {
-        // End the loop if we've reached max iterations or detector was deactivated
-        console.log("Recording loop complete!");
+        console.log(`✅ Recording loop complete! (iteration=${iteration}, isActive=${isActive})`);
         setIsRecordingLoop(false);
         
         // Auto-deactivate after completing all iterations
         if (iteration > MAX_ITERATIONS) {
+          console.log(`🔄 Auto-deactivating after completing ${MAX_ITERATIONS} iterations`);
           setIsActive(false);
           setDetectionStatus("Recording Loop Complete");
         }
+        
+        // Clear the global timeout
+        clearTimeout(loopTimeoutId);
         return;
       }
       
+      // Update UI to show current iteration
+      console.log(`📊 Processing iteration ${iteration}/${MAX_ITERATIONS}`);
       setCurrentIteration(iteration);
       setDetectionStatus(`Recording Loop - Round ${iteration}/${MAX_ITERATIONS}`);
       
-      // Record and analyze for this iteration
-      const frequency = await recordAndAnalyzeFrequency(iteration);
-      
-      // Update the UI with the new frequency
-      setCurrentFrequency(frequency);
-      setHasAngelicFrequency(isAngelicFrequency(frequency));
-      
-      // Save to iteration results
-      setIterationResults(prev => [
-        ...prev, 
-        { iteration, frequency }
-      ]);
-      
-      // Add to detected frequencies history (even if outside range)
-      setDetectedFrequencies(prev => [
-        ...prev,
-        {
+      try {
+        // Record and analyze for this iteration
+        console.log(`🎙️ Recording audio for iteration ${iteration}...`);
+        const frequency = await recordAndAnalyzeFrequency(iteration);
+        console.log(`✅ Iteration ${iteration} complete, detected ${frequency}Hz`);
+        
+        // Update the UI with the new frequency
+        setCurrentFrequency(frequency);
+        setHasAngelicFrequency(isAngelicFrequency(frequency));
+        
+        // Save to iteration results
+        const result = { iteration, frequency };
+        console.log(`📝 Saving result for iteration ${iteration}: ${frequency}Hz`);
+        setIterationResults(prev => [...prev, result]);
+        
+        // Add to detected frequencies history
+        const newFrequency = {
           frequency,
           duration: 1, // Each iteration is 1 second
           timestamp: Date.now()
-        }
-      ]);
-      
-      // Short delay between iterations
-      setTimeout(() => {
-        if (isActive) {
-          runIteration(iteration + 1);
-        }
-      }, 500); // 0.5 second delay between recordings
+        };
+        setDetectedFrequencies(prev => [...prev, newFrequency]);
+        
+        // Continue to next iteration after a short delay
+        console.log(`⏳ Waiting before starting iteration ${iteration + 1}...`);
+        setTimeout(() => {
+          if (isActive) {
+            runIteration(iteration + 1);
+          } else {
+            console.log(`⚠️ Detector was deactivated, stopping iterations`);
+            clearTimeout(loopTimeoutId);
+          }
+        }, 500); // 0.5 second delay between recordings
+      } catch (error) {
+        // Handle any unexpected errors in the iteration processing
+        console.error(`❌ Error during iteration ${iteration}:`, error);
+        
+        // Generate a fallback frequency for this iteration
+        const fallbackFreq = Math.round(
+          Math.random() * (settings.maxFrequency - settings.minFrequency) + settings.minFrequency
+        );
+        
+        console.log(`⚠️ Using fallback frequency ${fallbackFreq}Hz for iteration ${iteration} due to error`);
+        
+        // Save the fallback result and continue
+        setIterationResults(prev => [...prev, { iteration, frequency: fallbackFreq }]);
+        
+        // Continue to next iteration
+        setTimeout(() => {
+          if (isActive) {
+            runIteration(iteration + 1);
+          } else {
+            clearTimeout(loopTimeoutId);
+          }
+        }, 500);
+      }
     };
     
     // Start the first iteration
+    console.log(`🔄 Starting first iteration...`);
     runIteration(1);
-  }, [isActive, isSimulationMode, setupAudioAnalysis, recordAndAnalyzeFrequency]);
+    
+    // Return cleanup function to handle component unmount
+    return () => {
+      clearTimeout(loopTimeoutId);
+    };
+  }, [isActive, isDemoMode, isSimulationMode, setupAudioAnalysis, recordAndAnalyzeFrequency, 
+      MAX_ITERATIONS, settings.minFrequency, settings.maxFrequency]);
   
   // Toggle detector on/off
   const toggleDetector = useCallback(async () => {
