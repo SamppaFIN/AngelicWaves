@@ -779,7 +779,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   const recordAndAnalyzeFrequency = useCallback(async (iterationNumber: number): Promise<number> => {
     return new Promise(async (resolve) => {
       console.log(`⚡⚡⚡ RECORDING ITERATION ${iterationNumber}/${MAX_ITERATIONS} STARTED ⚡⚡⚡`);
-      console.log(`🎙️ Starting 1-second audio recording for iteration ${iterationNumber}...`);
+      console.log(`🎙️ Starting 3-second audio recording for iteration ${iterationNumber}...`);
       
       // Force update the current iteration again to ensure UI is in sync
       setCurrentIteration(iterationNumber);
@@ -854,7 +854,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
       
       console.log(`🎙️ Starting iteration ${iterationNumber} recording...`);
       
-      // We'll record for 1 second and then analyze the data
+      // We'll record for 3 seconds and then analyze the data
       let recordingStartTime = Date.now();
       let highestAmplitude = 0;
       let dominantFrequency = 0;
@@ -911,9 +911,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
             dominantFrequency = calculatedFreq;
           }
           
-          // Check if we've been recording for 1 second
+          // Check if we've been recording for 3 seconds
           const now = Date.now();
-          if (now - recordingStartTime < 1000) {
+          if (now - recordingStartTime < 3000) {
             // Continue recording
             requestAnimationFrame(analyzeFrame);
           } else {
@@ -1027,8 +1027,8 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     
     // Set active state and update UI
     setIsActive(true);
-    setDetectionStatus("Recording Loop Started - Round 1/15");
-    console.log(`🔄 Recording loop activated! Taking ${MAX_ITERATIONS} one-second audio samples...`);
+    setDetectionStatus(`Recording Loop Started - Round 1/${MAX_ITERATIONS}`);
+    console.log(`🔄 Recording loop activated! Taking ${MAX_ITERATIONS} three-second audio samples...`);
     
     // Function to run a single iteration with robust error handling
     const runIteration = async (iteration: number) => {
@@ -1148,7 +1148,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         // Add to detected frequencies history
         const newFrequency = {
           frequency,
-          duration: 1, // Each iteration is 1 second
+          duration: 3, // Each iteration is 3 seconds
           timestamp: Date.now()
         };
         setDetectedFrequencies(prev => [...prev, newFrequency]);
@@ -1252,7 +1252,7 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
           ...prev, 
           {
             frequency: fallbackFreq,
-            duration: 1,  // Each iteration is 1 second
+            duration: 3,  // Each iteration is 3 seconds
             timestamp: Date.now()
           }
         ]);
