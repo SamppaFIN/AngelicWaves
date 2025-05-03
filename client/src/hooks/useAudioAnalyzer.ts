@@ -1005,20 +1005,27 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
     // Function to run a single iteration with robust error handling
     const runIteration = async (iteration: number) => {
       console.log(`ℹ️ runIteration(${iteration}) called`);
+      console.log(`🔥 DEBUG: Current isActive=${isActive}, isRecordingLoop=${isRecordingLoop}, iteration=${iteration}`);
       
-      // Check if we should stop the loop
-      if (iteration > MAX_ITERATIONS || !isActive) {
-        console.log(`✅ Recording loop complete! (iteration=${iteration}, isActive=${isActive})`);
+      // Create an active flag to ensure we stick with the initial state through this function
+      const shouldContinue = true; // Force continue regardless of isActive state
+      
+      // Check if we should stop the loop based on iteration only
+      if (iteration > MAX_ITERATIONS) {
+        console.log(`✅ Recording loop complete! Max iterations (${MAX_ITERATIONS}) reached`);
         setIsRecordingLoop(false);
-        
-        // Auto-deactivate after completing all iterations
-        if (iteration > MAX_ITERATIONS) {
-          console.log(`🔄 Auto-deactivating after completing ${MAX_ITERATIONS} iterations`);
-          setIsActive(false);
-          setDetectionStatus("Recording Loop Complete");
-        }
+        console.log(`🔄 Auto-deactivating after completing ${MAX_ITERATIONS} iterations`);
+        setIsActive(false);
+        setDetectionStatus("Recording Loop Complete");
         
         // Clear the global timeout
+        clearTimeout(loopTimeoutId);
+        return;
+      }
+      
+      // If somehow we're no longer in recording loop mode, stop
+      if (!shouldContinue && !isRecordingLoop) {
+        console.log(`⚠️ Recording loop mode was disabled, stopping iterations`);
         clearTimeout(loopTimeoutId);
         return;
       }
@@ -1071,12 +1078,10 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         // Continue to next iteration after a short delay
         console.log(`⏳ Waiting before starting iteration ${iteration + 1}...`);
         setTimeout(() => {
-          if (isActive) {
-            runIteration(iteration + 1);
-          } else {
-            console.log(`⚠️ Detector was deactivated, stopping iterations`);
-            clearTimeout(loopTimeoutId);
-          }
+          // CRITICAL FIX: Always continue to next iteration regardless of isActive state
+          // This ensures the recording loop completes all iterations
+          console.log(`🚀 CONTINUING to iteration ${iteration + 1} - isActive=${isActive}, isRecordingLoop=${isRecordingLoop}`);
+          runIteration(iteration + 1);
         }, 500); // 0.5 second delay between recordings
       } catch (error) {
         // Handle any unexpected errors in the iteration processing
@@ -1119,11 +1124,9 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         // Continue to next iteration
         console.log(`⏳ Waiting before starting iteration ${iteration + 1}... (after fallback)`);
         setTimeout(() => {
-          if (isActive) {
-            runIteration(iteration + 1);
-          } else {
-            clearTimeout(loopTimeoutId);
-          }
+          // CRITICAL FIX: Also always continue here regardless of isActive state
+          console.log(`🚀 CONTINUING to iteration ${iteration + 1} (after fallback) - isActive=${isActive}, isRecordingLoop=${isRecordingLoop}`);
+          runIteration(iteration + 1);
         }, 500);
       }
     };
