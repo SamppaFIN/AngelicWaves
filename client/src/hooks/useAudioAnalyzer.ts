@@ -778,11 +778,12 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
   // Perform a single recording and frequency analysis
   const recordAndAnalyzeFrequency = useCallback(async (iterationNumber: number): Promise<number> => {
     return new Promise(async (resolve) => {
-      console.log(`🎙️ Starting iteration ${iterationNumber}...`);
+      console.log(`⚡⚡⚡ RECORDING ITERATION ${iterationNumber}/${MAX_ITERATIONS} STARTED ⚡⚡⚡`);
+      console.log(`🎙️ Starting 1-second audio recording for iteration ${iterationNumber}...`);
       
       // Create a timeout handler to prevent getting stuck
       let timeoutId: number | null = window.setTimeout(() => {
-        console.log(`⏱️ TIMEOUT for iteration ${iterationNumber} - Generating random frequency`);
+        console.log(`⏱️ TIMEOUT for iteration ${iterationNumber} - 3 seconds passed without completing analysis`);
         
         // Generate a random frequency as a fallback
         const timeoutFreq = Math.round(
