@@ -1030,14 +1030,26 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         const frequency = await recordAndAnalyzeFrequency(iteration);
         console.log(`✅ Iteration ${iteration} complete, detected ${frequency}Hz`);
         
-        // Update the UI with the new frequency
+        // FORCE update UI with new frequency - this is critical for the visualizer
+        // This also updates the lastDetectedFrequencyRef internally
+        console.log(`📈 IMPORTANT: Setting current frequency to ${frequency}Hz in UI`);
+        lastDetectedFrequencyRef.current = frequency;
         setCurrentFrequency(frequency);
-        setHasAngelicFrequency(isAngelicFrequency(frequency));
         
-        // Save to iteration results
+        // Check if it's an angelic frequency
+        const isAngelic = isAngelicFrequency(frequency);
+        console.log(`${isAngelic ? '✨' : '🔍'} Frequency ${frequency}Hz is ${isAngelic ? 'angelic' : 'normal'}`);
+        setHasAngelicFrequency(isAngelic);
+        
+        // Save to iteration results - replace if already exists for this iteration
         const result = { iteration, frequency };
         console.log(`📝 Saving result for iteration ${iteration}: ${frequency}Hz`);
-        setIterationResults(prev => [...prev, result]);
+        setIterationResults(prev => {
+          // Remove any existing result for this iteration to avoid duplicates
+          const filtered = prev.filter(r => r.iteration !== iteration);
+          console.log(`📋 Iteration results: ${filtered.length} previous + 1 new = ${filtered.length + 1} total`);
+          return [...filtered, result];
+        });
         
         // Add to detected frequencies history
         const newFrequency = {
@@ -1068,10 +1080,35 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
         
         console.log(`⚠️ Using fallback frequency ${fallbackFreq}Hz for iteration ${iteration} due to error`);
         
-        // Save the fallback result and continue
-        setIterationResults(prev => [...prev, { iteration, frequency: fallbackFreq }]);
+        // FORCE UI update with fallback frequency too
+        console.log(`📈 IMPORTANT: Setting current frequency to ${fallbackFreq}Hz in UI (fallback)`);
+        lastDetectedFrequencyRef.current = fallbackFreq;
+        setCurrentFrequency(fallbackFreq);
+        
+        // Check if it's an angelic frequency
+        const isAngelic = isAngelicFrequency(fallbackFreq);
+        console.log(`${isAngelic ? '✨' : '🔍'} Fallback frequency ${fallbackFreq}Hz is ${isAngelic ? 'angelic' : 'normal'}`);
+        setHasAngelicFrequency(isAngelic);
+        
+        // Save the fallback result and continue - replace if exists
+        setIterationResults(prev => {
+          // Remove any existing result for this iteration to avoid duplicates
+          const filtered = prev.filter(r => r.iteration !== iteration);
+          return [...filtered, { iteration, frequency: fallbackFreq }];
+        });
+        
+        // Add to detected frequencies history too
+        setDetectedFrequencies(prev => [
+          ...prev, 
+          {
+            frequency: fallbackFreq,
+            duration: 1,  // Each iteration is 1 second
+            timestamp: Date.now()
+          }
+        ]);
         
         // Continue to next iteration
+        console.log(`⏳ Waiting before starting iteration ${iteration + 1}... (after fallback)`);
         setTimeout(() => {
           if (isActive) {
             runIteration(iteration + 1);
