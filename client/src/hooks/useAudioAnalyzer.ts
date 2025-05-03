@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { isAngelicFrequency, angelicFrequencies } from "@/lib/frequencyAnalysis";
 import { DetectedFrequency } from "@shared/schema";
-import { FrequencySettings } from "@/lib/types";
+import { FrequencySettings, AngelicFrequency } from "@/lib/types";
 
 // Define dominant frequency info for AI analysis
 export interface DominantFrequency {
@@ -1164,15 +1164,25 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
           const isAngelic = isAngelicFrequency(freq);
           const angelicStatus = isAngelic ? "ANGELIC FREQUENCY" : "normal frequency";
           
-          // Calculate proximity to nearest angelic frequency
-          let nearestAngelic = getClosestAngelicFrequency(freq);
+          // Find nearest angelic frequency (without tolerance limitation)
+          let closestFreq: AngelicFrequency | null = null;
+          let minDiff = Number.MAX_VALUE;
+          
+          angelicFrequencies.forEach(af => {
+            const diff = Math.abs(af.frequency - freq);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestFreq = af;
+            }
+          });
+          
           let proximityInfo = "";
           
-          if (nearestAngelic) {
-            const diff = Math.abs(freq - nearestAngelic.frequency);
-            const percentMatch = 100 - (diff / nearestAngelic.frequency * 100);
+          if (closestFreq) {
+            const diff = Math.abs(freq - closestFreq.frequency);
+            const percentMatch = 100 - (diff / closestFreq.frequency * 100);
             proximityInfo = `
-              Nearest angelic frequency: ${nearestAngelic.frequency}Hz (${nearestAngelic.description})
+              Nearest angelic frequency: ${closestFreq.frequency}Hz (${closestFreq.description})
               Difference: ${diff.toFixed(2)}Hz
               Match percentage: ${percentMatch.toFixed(2)}%
             `;
@@ -1261,15 +1271,25 @@ export function useAudioAnalyzer(settings: FrequencySettings): AudioAnalyzerResu
           // For fallback frequencies, indicate reduced certainty in the AI analysis
           console.log(`⚠️ Using fallback frequency analysis with reduced certainty`);
           
-          // Calculate proximity to nearest angelic frequency
-          let nearestAngelic = getClosestAngelicFrequency(freq);
+          // Find nearest angelic frequency (without tolerance limitation)
+          let closestFreq = null;
+          let minDiff = Number.MAX_VALUE;
+          
+          angelicFrequencies.forEach(af => {
+            const diff = Math.abs(af.frequency - freq);
+            if (diff < minDiff) {
+              minDiff = diff;
+              closestFreq = af;
+            }
+          });
+          
           let proximityInfo = "";
           
-          if (nearestAngelic) {
-            const diff = Math.abs(freq - nearestAngelic.frequency);
-            const percentMatch = 100 - (diff / nearestAngelic.frequency * 100);
+          if (closestFreq) {
+            const diff = Math.abs(freq - closestFreq.frequency);
+            const percentMatch = 100 - (diff / closestFreq.frequency * 100);
             proximityInfo = `
-              Nearest angelic frequency: ${nearestAngelic.frequency}Hz (${nearestAngelic.description})
+              Nearest angelic frequency: ${closestFreq.frequency}Hz (${closestFreq.description})
               Difference: ${diff.toFixed(2)}Hz
               Match percentage: ${percentMatch.toFixed(2)}%
             `;
