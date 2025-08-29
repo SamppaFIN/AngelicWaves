@@ -1,7 +1,7 @@
 # Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
 # More GitHub Actions for Azure: https://github.com/Azure/actions
 
-name: Build and deploy Node.js app to Azure Web App - angelicwaves
+name: Build and deploy Node.js app to Azure Web App - AngelicWaves
 
 on:
   push:
@@ -51,15 +51,15 @@ jobs:
       - name: Login to Azure
         uses: azure/login@v2
         with:
-          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_D73F88BC9246443899A68D9BD05945FA }}
-          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_97E6449FB0AD4655BCD92821AB5416E4 }}
-          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_50F6064B92C14A9EB081585FF8D297AD }}
+          client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_DBA7171D1FD04A338427A03DFA040D1E }}
+          tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_26A8BCE010DD41AC8466D8365ECD963E }}
+          subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_F68AB90B12A448ABA58A861FC1E73D2C }}
 
       - name: 'Deploy to Azure Web App'
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
         with:
-          app-name: 'angelicwaves'
+          app-name: 'AngelicWaves'
           slot-name: 'Production'
           package: .
           
