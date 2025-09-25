@@ -61,20 +61,8 @@ app.use((req, res, next) => {
   // It is the only port that is not firewalled.
   const port = process.env.PORT || 5000;
   
-  // Cross-platform server configuration
-  if (process.platform === "win32") {
-    // Windows-specific configuration
-    server.listen(port, "localhost", () => {
-      console.log(`serving on port ${port}`);
-    });
-  } else {
-    // Linux/macOS configuration
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      console.log(`serving on port ${port}`);
-    });
-  }
+  // Heroku-compatible server configuration
+  server.listen(port, "0.0.0.0", () => {
+    console.log(`AngelicWaves server running on port ${port}`);
+  });
 })();

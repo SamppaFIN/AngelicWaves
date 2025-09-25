@@ -1,0 +1,25 @@
+{
+  "name": "AngelicWaves",
+  "description": "Real-time frequency detection and analysis application",
+  "repository": "https://github.com/SamppaFIN/AngelicWaves",
+  "logo": "https://raw.githubusercontent.com/SamppaFIN/AngelicWaves/main/generated-icon.png",
+  "keywords": ["frequency", "audio", "analysis", "react", "typescript"],
+  "stack": "heroku-18",
+  "buildpacks": [
+    {
+      "url": "heroku/nodejs"
+    }
+  ],
+  "env": {
+    "NODE_ENV": {
+      "description": "Node environment",
+      "value": "production"
+    }
+  },
+  "formation": {
+    "web": {
+      "quantity": 1,
+      "size": "basic"
+    }
+  }
+}
