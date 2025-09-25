@@ -19,7 +19,6 @@ import { DetectedFrequency } from "@shared/schema";
 export default function Home() {
   const [showPermissionModal, setShowPermissionModal] = useState(false);
   const [isPlayingSound, setIsPlayingSound] = useState(false);
-  const [showHistory, setShowHistory] = useState(false);
   const [settings, setSettings] = useState<FrequencySettings>({
     minFrequency: 432,
     maxFrequency: 963,
@@ -212,21 +211,7 @@ export default function Home() {
               )}
             </div>
 
-            <div className="flex items-center mt-1 space-x-4">
-              <button
-                onClick={toggleCalculationMethod}
-                className="text-xs underline text-gray-400 hover:text-gray-300"
-              >
-                {showCalculationMethod ? 'Hide Calculation Method' : 'Show Calculation Method'}
-              </button>
-              
-              <button
-                onClick={() => setShowHistory(prev => !prev)}
-                className="text-xs underline text-purple-400 hover:text-purple-300"
-              >
-                {showHistory ? 'Hide History & References' : 'Show History & References'}
-              </button>
-            </div>
+            {/* Header toggles for calculation/history removed as requested */}
           </div>
         </div>
       </header>
@@ -326,36 +311,34 @@ export default function Home() {
           </div>
         )}
         
-        {showCalculationMethod && (
-          <div className="bg-gray-800/70 p-4 rounded-lg mb-6 text-sm">
-            <h3 className="text-green-400 font-medium mb-2">How Frequencies Are Calculated</h3>
-            <div className="space-y-2 text-gray-300">
-              <p>The frequency detection uses a Fast Fourier Transform (FFT) algorithm to analyze audio signals:</p>
-              <ol className="list-decimal pl-5 space-y-1">
-                <li>Audio is sampled at ~44.1kHz through your microphone</li>
-                <li>The signal is divided into frequency bins using FFT analysis</li>
-                <li>We identify the dominant frequency bin with the highest amplitude</li>
-                <li>The bin index is converted to Hz using the formula: <code className="px-1 bg-gray-700 rounded">frequency = (binIndex * sampleRate/2) / totalBins</code></li>
-                <li>Noise filtering is applied based on your sensitivity setting ({settings.sensitivity})</li>
-                <li>Frequencies are only displayed when they fall within your set range ({settings.minFrequency}Hz - {settings.maxFrequency}Hz)</li>
-              </ol>
-              {isSimulationMode && (
-                <p className="text-amber-400 mt-2">Note: In simulation mode, frequencies are generated algorithmically rather than detected from audio input.</p>
-              )}
-              {isDemoMode && (
-                <p className="text-purple-400 mt-2">
-                  Note: Demo mode is currently active, showing frequency at {demoFrequency}Hz
-                  {isAngelicFrequency(demoFrequency) && " (Angelic Frequency)"}.
-                </p>
-              )}
-              {isRecordingLoop && (
-                <p className="text-green-400 mt-2">
-                  Note: Recording loop is active. The system is making {MAX_ITERATIONS} one-second recordings to analyze frequencies.
-                </p>
-              )}
-            </div>
+        <div className="bg-gray-800/70 p-4 rounded-lg mb-6 text-sm">
+          <h3 className="text-green-400 font-medium mb-2">How Frequencies Are Calculated</h3>
+          <div className="space-y-2 text-gray-300">
+            <p>The frequency detection uses a Fast Fourier Transform (FFT) algorithm to analyze audio signals:</p>
+            <ol className="list-decimal pl-5 space-y-1">
+              <li>Audio is sampled at ~44.1kHz through your microphone</li>
+              <li>The signal is divided into frequency bins using FFT analysis</li>
+              <li>We identify the dominant frequency bin with the highest amplitude</li>
+              <li>The bin index is converted to Hz using the formula: <code className="px-1 bg-gray-700 rounded">frequency = (binIndex * sampleRate/2) / totalBins</code></li>
+              <li>Noise filtering is applied based on your sensitivity setting ({settings.sensitivity})</li>
+              <li>Frequencies are only displayed when they fall within your set range ({settings.minFrequency}Hz - {settings.maxFrequency}Hz)</li>
+            </ol>
+            {isSimulationMode && (
+              <p className="text-amber-400 mt-2">Note: In simulation mode, frequencies are generated algorithmically rather than detected from audio input.</p>
+            )}
+            {isDemoMode && (
+              <p className="text-purple-400 mt-2">
+                Note: Demo mode is currently active, showing frequency at {demoFrequency}Hz
+                {isAngelicFrequency(demoFrequency) && " (Angelic Frequency)"}.
+              </p>
+            )}
+            {isRecordingLoop && (
+              <p className="text-green-400 mt-2">
+                Note: Recording loop is active. The system is making {MAX_ITERATIONS} one-second recordings to analyze frequencies.
+              </p>
+            )}
           </div>
-        )}
+        </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
           <FrequencyThresholds
@@ -379,7 +362,7 @@ export default function Home() {
         
         <AngelicFrequencies />
         
-        {showHistory && <FrequencyHistory />}
+        <FrequencyHistory />
       </main>
 
       <MicrophonePermission
@@ -396,6 +379,8 @@ export default function Home() {
         isDemoMode={isDemoMode}
         isPlayingSound={isPlayingSound}
       />
+
+      {/* Bottom dock removed; history and calculations are always visible */}
     </div>
   );
 }

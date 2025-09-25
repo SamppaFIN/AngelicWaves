@@ -18,10 +18,17 @@ export function FrequencyExplorerMascot({
   const [mascotState, setMascotState] = useState<'idle' | 'searching' | 'excited' | 'dancing' | 'listening'>('idle');
   const [mascotMessage, setMascotMessage] = useState('');
   const [showMessage, setShowMessage] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false);
   const [blinkCounter, setBlinkCounter] = useState(0);
   
   // Randomly blink the mascot's eyes every few seconds
   useEffect(() => {
+    // First-run onboarding (localStorage gate)
+    const seen = typeof window !== 'undefined' && localStorage.getItem('aw_onboarded');
+    if (!seen) {
+      setShowOnboarding(true);
+    }
+
     const blinkInterval = setInterval(() => {
       setBlinkCounter(prev => prev + 1);
       setTimeout(() => setBlinkCounter(0), 150); // Eyes closed for 150ms
@@ -243,6 +250,39 @@ export function FrequencyExplorerMascot({
 
   return (
     <div className="fixed bottom-16 right-4 flex items-end">
+      {showOnboarding && (
+        <div className="fixed inset-0 z-30 bg-black/60 flex items-center justify-center px-4">
+          <div className="max-w-lg w-full bg-gray-900 border border-green-800/40 rounded-xl shadow-2xl p-6 relative">
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-green-400">✧</span>
+              <h2 className="text-lg font-semibold text-white">Welcome to AngelicWaves</h2>
+            </div>
+            <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-200">
+              <li>Allow microphone access so we can detect live frequencies.</li>
+              <li>Toggle the detector at the top-right to start/stop listening.</li>
+              <li>Watch the visualizer and look for angelic tones (432–963Hz).</li>
+              <li>Use the bottom dock to open History and Calculations anytime.</li>
+            </ol>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                className="px-3 py-1.5 text-sm rounded-md bg-gray-700 hover:bg-gray-600 text-gray-200"
+                onClick={() => setShowOnboarding(false)}
+              >
+                Maybe later
+              </button>
+              <button
+                className="px-3 py-1.5 text-sm rounded-md bg-green-600 hover:bg-green-700 text-white"
+                onClick={() => {
+                  setShowOnboarding(false);
+                  try { localStorage.setItem('aw_onboarded', '1'); } catch {}
+                }}
+              >
+                Got it
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {/* Speech bubble */}
       {showMessage && (
         <div className="mb-2 mr-4 max-w-xs bg-white/95 text-gray-800 p-4 rounded-lg rounded-br-none shadow-xl transition-opacity animate-fade-in border border-green-300/40">

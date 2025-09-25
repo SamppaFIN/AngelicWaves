@@ -81,6 +81,15 @@ const literaryReferences = [
   { source: "Ancient Karelian Runes", reference: "Singing competitions", frequency: "Voice frequencies", notes: "Magic through precise vibrational sounds in song duels" }
 ];
 
+  // Additional external references (condensed summaries)
+  const externalReferences = [
+    { title: 'Cymatics (Hans Jenny)', note: 'Visual patterns formed by vibrating media across frequencies.' },
+    { title: 'Schumann Resonances', note: 'Earth-ionosphere cavity standing waves, fundamental ~7.83Hz.' },
+    { title: 'Binaural Beats', note: 'Perceived beats from two tones; explored for entrainment effects.' },
+    { title: 'Vibroacoustic Therapy', note: 'Low-frequency sound applied to the body; clinical relaxation outcomes.' },
+    { title: '432Hz vs 440Hz Tuning', note: 'Alternate tuning claims; evidence mixed, cultural preference notable.' }
+  ];
+
 // Physical Acoustic Therapy information (Fysioakustinen hoito)
 // Based on information from https://www.terapiapalvelutuuli.com/fysioakustinen-hoito
 const acousticTherapyInfo = {
@@ -121,6 +130,9 @@ export function FrequencyHistory() {
   return (
     <div className="bg-gray-800/70 p-4 rounded-lg mb-6">
       <h3 className="text-green-400 font-medium mb-3">Music Frequency History & References</h3>
+      <div className="border border-green-900/30 rounded-md p-3 bg-gray-900/40 mb-4">
+        <p className="text-sm text-gray-300">A curated timeline and cross-cultural references for frequency theories. Visual breaks highlight eras and domains.</p>
+      </div>
       
       <Tabs defaultValue="history" onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 mb-4">
@@ -133,8 +145,25 @@ export function FrequencyHistory() {
         </TabsList>
         
         <TabsContent value="history" className="space-y-4">
-          <div className="text-sm text-gray-300 whitespace-pre-line">
-            {frequencyHistory}
+          <div className="space-y-4">
+            <div className="bg-gray-900/60 border border-gray-700 rounded-md p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">Ancient to Classical</div>
+              <div className="text-sm text-gray-300 whitespace-pre-line">{frequencyHistory.split('\n').slice(0,7).join('\n')}</div>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="h-px w-24 bg-gradient-to-r from-transparent via-green-500 to-transparent opacity-50" />
+            </div>
+            <div className="bg-gray-900/60 border border-gray-700 rounded-md p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">Modern Era</div>
+              <div className="text-sm text-gray-300 whitespace-pre-line">{frequencyHistory.split('\n').slice(7,14).join('\n')}</div>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="h-px w-24 bg-gradient-to-r from-transparent via-purple-500 to-transparent opacity-50" />
+            </div>
+            <div className="bg-gray-900/60 border border-gray-700 rounded-md p-3">
+              <div className="text-xs uppercase tracking-wide text-gray-400 mb-1">Contemporary Research</div>
+              <div className="text-sm text-gray-300 whitespace-pre-line">{frequencyHistory.split('\n').slice(14).join('\n')}</div>
+            </div>
           </div>
         </TabsContent>
         
@@ -316,6 +345,18 @@ export function FrequencyHistory() {
                   <p className="mt-1 text-gray-300">{project.description}</p>
                 </div>
               ))}
+            </div>
+
+            <div className="mt-6">
+              <h4 className="text-green-400 font-medium mb-2">External References</h4>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {externalReferences.map((ref, i) => (
+                  <div key={i} className="border border-gray-700 rounded p-3 bg-gray-900/50">
+                    <div className="text-purple-300 font-medium">{ref.title}</div>
+                    <div className="text-gray-300 text-sm mt-1">{ref.note}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </TabsContent>

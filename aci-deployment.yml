@@ -1,0 +1,30 @@
+apiVersion: 2021-10-01
+location: eastus
+name: angelic-waves-aci
+properties:
+  containers:
+  - name: angelic-waves
+    properties:
+      image: angelicwavesacr.azurecr.io/angelic-waves:latest
+      resources:
+        requests:
+          cpu: 0.5
+          memoryInGB: 1.0
+      ports:
+      - port: 5000
+        protocol: tcp
+      environmentVariables:
+      - name: NODE_ENV
+        value: "production"
+      - name: PORT
+        value: "5000"
+  osType: Linux
+  restartPolicy: Always
+  ipAddress:
+    type: Public
+    ports:
+    - protocol: tcp
+      port: 5000
+  tags:
+    app: angelic-waves
+    environment: production
