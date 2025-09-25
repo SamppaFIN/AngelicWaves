@@ -75,9 +75,16 @@ export function serveStatic(app: Express) {
   const distPath = path.resolve(__dirname, "..", "dist", "public");
 
   if (!fs.existsSync(distPath)) {
-    throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+    // Be resilient in production: don't crash the dyno if build assets are missing
+    console.warn(
+      `Static assets not found at ${distPath}. Did 'vite build' run? Falling back to minimal response.`,
     );
+    app.get("*", (_req, res) => {
+      res.status(200).send(
+        "<html><head><title>AngelicWaves</title></head><body><h1>App is running</h1><p>Build assets missing. Ensure 'npm run build' (heroku-postbuild) completed.</p></body></html>",
+      );
+    });
+    return;
   }
 
   app.use(express.static(distPath));
