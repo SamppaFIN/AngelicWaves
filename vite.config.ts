@@ -9,8 +9,10 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "src"),
     },
   },
-  // Use root base in dev to avoid nested path; GH Pages base for production builds
-  base: mode === 'development' ? '/' : '/AngelicWaves/',
+  // Base is env-driven for multi-host deploys
+  // - GitHub Pages: leave undefined to default to /AngelicWaves/
+  // - Heroku: set VITE_PUBLIC_BASE=/ in Config Vars
+  base: process.env.VITE_PUBLIC_BASE ?? (mode === 'development' ? '/' : '/AngelicWaves/'),
   build: {
     outDir: "dist",
     emptyOutDir: true,
