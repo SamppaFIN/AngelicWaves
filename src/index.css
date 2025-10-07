@@ -1,0 +1,147 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply font-sans antialiased bg-background text-foreground;
+  }
+}
+
+@layer utilities {
+  /* Mascot animations */
+  .animate-float {
+    animation: float 3s ease-in-out infinite;
+  }
+
+  .animate-ping-slow {
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;
+  }
+
+  .animate-ping-slow-delayed {
+    animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite 0.5s;
+  }
+
+  .animate-fade-in {
+    animation: fadeIn 0.3s ease-in-out;
+  }
+  
+  .animate-dance {
+    animation: dance 1s ease-in-out infinite;
+  }
+  
+  .animate-head-bob {
+    animation: headBob 1.5s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0% {
+      transform: translateY(0px);
+    }
+    50% {
+      transform: translateY(-10px);
+    }
+    100% {
+      transform: translateY(0px);
+    }
+  }
+
+  @keyframes ping {
+    0% {
+      transform: scale(1);
+      opacity: 1;
+    }
+    75%, 100% {
+      transform: scale(1.2);
+      opacity: 0;
+    }
+  }
+
+  @keyframes fadeIn {
+    0% {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes dance {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    25% {
+      transform: translateY(-5px) rotate(-5deg);
+    }
+    50% {
+      transform: translateY(0) rotate(0deg);
+    }
+    75% {
+      transform: translateY(-5px) rotate(5deg);
+    }
+  }
+  
+  @keyframes headBob {
+    0%, 100% {
+      transform: translateY(0) rotate(0deg);
+    }
+    50% {
+      transform: translateY(-3px) rotate(2deg);
+    }
+  }
+  
+  /* Disco ball effect for when angelic frequencies are detected */
+  .disco-ball-effect {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 40;
+    background: radial-gradient(circle at 50% 50%, transparent 90%, rgba(74, 222, 128, 0.1) 100%);
+    animation: disco-pulse 2s ease-in-out infinite;
+  }
+  
+  .disco-light {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(74, 222, 128, 0.3);
+    filter: blur(8px);
+    animation: disco-float 4s ease-in-out infinite;
+  }
+  
+  @keyframes disco-pulse {
+    0%, 100% {
+      background: radial-gradient(circle at 50% 50%, transparent 90%, rgba(74, 222, 128, 0.1) 100%);
+    }
+    50% {
+      background: radial-gradient(circle at 50% 50%, transparent 90%, rgba(74, 222, 128, 0.2) 100%);
+    }
+  }
+  
+  @keyframes disco-float {
+    0%, 100% {
+      transform: translateY(0) translateX(0);
+      opacity: 0.3;
+    }
+    25% {
+      transform: translateY(-20px) translateX(10px);
+      opacity: 0.6;
+    }
+    50% {
+      transform: translateY(-10px) translateX(20px);
+      opacity: 0.3;
+    }
+    75% {
+      transform: translateY(-30px) translateX(-10px);
+      opacity: 0.6;
+    }
+  }
+}
